@@ -43,7 +43,7 @@ const DEVICE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code'
 // gh-style device flow: request a code, show it, POLL the token endpoint until
 // the user finishes in the browser. No localhost callback listener.
 export async function deviceLogin(host: string, scopes: string[]): Promise<StoredToken> {
-  const start = await fetch(`${host}/oauth/device/code`, {
+  const start = await fetch(`${host}/oauth/authorize_device`, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json'},
     body: new URLSearchParams({client_id: CLIENT_ID, scope: scopes.join(' ')}),
