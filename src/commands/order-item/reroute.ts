@@ -1,8 +1,9 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {Client, ApiError} from '../../lib/client.js'
 
-// Flagship write command. Maps to the existing react_ui order-item
-// fulfillment-location update endpoint (gated server-side by orders:write).
+// Flagship write command. Maps to the session-independent RESTful order-item
+// update endpoint (PATCH /order_items/:id), gated server-side by orders:write.
+// Deliberately NOT the POS cart endpoint — that requires a POS session/clock-in.
 export default class OrderItemReroute extends Command {
   static description = "Reroute an order item to a different fulfillment location. Requires scope: orders:write."
 
@@ -24,8 +25,8 @@ export default class OrderItemReroute extends Command {
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(OrderItemReroute)
-    const path = `/order_items/${args.id}/update_item_fulfillment_location`
-    const body = {fulfillment_location_id: flags.to}
+    const path = `/order_items/${args.id}`
+    const body = {order_item: {fulfillment_location_id: flags.to}}
 
     if (flags['dry-run']) {
       this.log(`DRY RUN → PATCH ${path}`)
