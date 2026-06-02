@@ -1,0 +1,45 @@
+{
+  "name": "@buckmason/pima-cli",
+  "version": "0.0.0",
+  "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
+  "bin": { "pima": "./bin/run.js" },
+  "type": "module",
+  "exports": "./dist/index.js",
+  "files": ["/bin", "/dist", "/skills", "/oclif.manifest.json"],
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "repository": "buckmason/pima-cli",
+  "dependencies": {
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "cli-table3": "^0.6",
+    "keytar": "^7",
+    "open": "^10"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "oclif": "^4",
+    "typescript": "^5",
+    "vitest": "^2",
+    "nock": "^13"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "./bin/dev.js",
+    "test": "vitest run",
+    "lint:skills": "node ./dist/lib/lint-skills.js",
+    "prepack": "tsc -b && oclif manifest"
+  },
+  "oclif": {
+    "bin": "pima",
+    "dirname": "pima",
+    "commands": "./dist/commands",
+    "topicSeparator": " ",
+    "plugins": ["@oclif/plugin-help"],
+    "topics": {
+      "auth": { "description": "Authenticate with a PIMA instance (OAuth device flow, gh-style)" },
+      "orders": { "description": "Orders: list, show" },
+      "order-item": { "description": "Order items: reroute fulfillment location, bulk-edit" }
+    }
+  }
+}
