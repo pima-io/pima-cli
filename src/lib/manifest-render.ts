@@ -1,4 +1,4 @@
-import type {Manifest, ManifestResource, ManifestField, ManifestAction} from './manifest.js'
+import type {Manifest, ManifestResource, ManifestField, ManifestAction, ManifestAccess} from './manifest.js'
 
 // Human-readable renderers for the manifest, shared by `resource describe` and
 // the live `skill resources` briefing so the two never drift.
@@ -9,6 +9,21 @@ function scopeLine(r: ManifestResource): string {
   if (r.scopes.read) parts.push(`read=${r.scopes.read}`)
   if (r.scopes.write) parts.push(`write=${r.scopes.write}`)
   return `scopes: ${parts.length ? parts.join(' ') : '(none)'}`
+}
+
+// "✓"/"✗" per verb — the access the CURRENT caller has (ability ∩ token scopes).
+function accessLine(a: ManifestAccess | undefined): string {
+  if (!a) return 'access: (not reported)'
+  const mark = (v?: boolean) => (v ? '✓' : '✗')
+  return `access: read ${mark(a.read)}  create ${mark(a.create)}  update ${mark(a.update)}  destroy ${mark(a.destroy)}`
+}
+
+// Compact one-token access indicator for tables/briefings, e.g. `r-cud` where a
+// granted verb shows its letter and a denied verb shows `-`.
+export function accessCell(a: ManifestAccess | undefined): string {
+  if (!a) return '?'
+  const flag = (v: boolean | undefined, ch: string) => (v ? ch : '-')
+  return `${flag(a.read, 'r')}${flag(a.create, 'c')}${flag(a.update, 'u')}${flag(a.destroy, 'd')}`
 }
 
 function fieldLine(f: ManifestField): string {
@@ -22,16 +37,21 @@ function fieldLine(f: ManifestField): string {
 }
 
 function actionLine(a: ManifestAction): string {
-  return `  ${a.name} [${a.method}] ${a.path}`
+  const mut = a.mutating === undefined ? '' : a.mutating ? ' [mutating]' : ' [read-only]'
+  return `  ${a.name} [${a.method}] ${a.path}${mut}`
 }
 
 // Full human-readable detail for one resource (the `resource describe` body).
-export function renderResourceDetail(r: ManifestResource): string {
+// `gated` reflects the manifest-level flag: when true the surface (and the
+// resource's `access` block) is filtered to the caller's ability ∩ token scopes.
+export function renderResourceDetail(r: ManifestResource, gated?: boolean): string {
   const out: string[] = []
   out.push(`${r.id}${r.title ? ` — ${r.title}` : ''}`)
+  if (gated !== undefined) out.push(`manifest: ${gated ? 'gated (filtered to your access)' : 'ungated (full surface)'}`)
   if (r.model) out.push(`model: ${r.model}${r.singular ? `  singular: ${r.singular}` : ''}`)
   out.push(`domain: ${r.domain ?? '(none)'}`)
   out.push(scopeLine(r))
+  out.push(accessLine(r.access))
 
   const supports = Object.entries(r.supports ?? {})
     .filter(([, v]) => v)
@@ -125,6 +145,9 @@ export function renderResourcesBriefing(manifest: Manifest): string {
   out.push('')
   out.push(
     `Manifest v${manifest.version} — ${resources.length} resource(s) across ${byDomain.size} domain(s). ` +
+      (manifest.gated
+        ? 'GATED: this surface is filtered to your access (ability ∩ token scopes); inaccessible resources are absent and each `access` reflects what you can do. '
+        : 'Ungated: this is the full surface. ') +
       'Use `pima resource describe <name>` for full detail, or the `pima_describe` MCP tool.',
   )
 
@@ -137,6 +160,7 @@ export function renderResourcesBriefing(manifest: Manifest): string {
         : 'public'
       out.push('')
       out.push(`### ${r.id}${r.title ? ` — ${r.title}` : ''}  (${scopes})`)
+      if (r.access) out.push(`- access: ${accessCell(r.access)} (r/c/u/d)`)
 
       const search = r.search?.fields ?? []
       if (search.length) out.push(`- search: ${search.join(', ')}`)
@@ -159,7 +183,11 @@ export function renderResourcesBriefing(manifest: Manifest): string {
       }
 
       if (r.member_actions?.length) {
-        out.push(`- actions: ${r.member_actions.map((a) => a.name).join(', ')}`)
+        out.push(
+          `- actions: ${r.member_actions
+            .map((a) => `${a.name}${a.mutating ? '!' : ''}`)
+            .join(', ')}`,
+        )
       }
     }
   }

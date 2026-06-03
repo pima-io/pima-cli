@@ -42,3 +42,14 @@ export async function deleteEntry(host: string): Promise<boolean> {
   await write(store)
   return true
 }
+
+// Delete every entry whose key starts with `prefix` (e.g. all cached manifests
+// for a host). Returns the number of entries removed.
+export async function deleteEntriesByPrefix(prefix: string): Promise<number> {
+  const store = await read()
+  const keys = Object.keys(store).filter((k) => k.startsWith(prefix))
+  if (keys.length === 0) return 0
+  for (const k of keys) delete store[k]
+  await write(store)
+  return keys.length
+}

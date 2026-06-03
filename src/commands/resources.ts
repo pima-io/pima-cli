@@ -1,6 +1,7 @@
 import {Flags} from '@oclif/core'
 import {BaseCommand} from '../lib/base.js'
 import {fetchManifest, type ManifestResource} from '../lib/manifest.js'
+import {accessCell} from '../lib/manifest-render.js'
 
 // `pima resources` — the catalog of everything the server exposes, discovered
 // live from /api_manifest.json (cached). The entry point for agent
@@ -34,6 +35,7 @@ export default class Resources extends BaseCommand {
         id: r.id,
         domain: r.domain ?? '',
         scopes: scopesCell(r),
+        access: accessCell(r.access),
         fields: String((r.fields ?? []).length),
         filters: String((r.filters ?? []).length),
         actions: String((r.member_actions ?? []).length + (r.collection_actions ?? []).length),
@@ -45,6 +47,7 @@ export default class Resources extends BaseCommand {
           {key: 'id', label: 'Resource'},
           {key: 'domain', label: 'Domain'},
           {key: 'scopes', label: 'Scopes'},
+          {key: 'access', label: 'Access'}, // r/c/u/d the current token can do
           {key: 'fields', label: '#Fields'},
           {key: 'filters', label: '#Filters'},
           {key: 'actions', label: '#Actions'},

@@ -35,7 +35,7 @@ export default class ResourceDescribe extends BaseCommand {
         this.log(JSON.stringify(resource, null, 2))
         return
       }
-      this.log(renderResourceDetail(resource))
+      this.log(renderResourceDetail(resource, manifest.gated))
     } catch (error) {
       this.fail(error)
     }

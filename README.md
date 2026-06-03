@@ -14,7 +14,7 @@ logic — it calls the same endpoints the PIMA web app uses, sending
 ## Install
 
 ```
-npm i -g @buckmason/pima-cli      # or: npx @buckmason/pima-cli
+npm i -g @pima-io/cli      # or: npx @pima-io/cli
 ```
 
 ## Quick start
@@ -57,11 +57,17 @@ The server self-describes its full resource surface at
 agent—can introspect before acting:
 
 ```
-pima resources                  # every resource: id, domain, scopes, #fields/#filters/#actions
+pima resources                  # every resource: id, domain, scopes, access (r/c/u/d), #fields/#filters/#actions
 pima resources --domain orders  # filter to one domain
-pima resource describe orders   # full contract: search/filters, create/update fields, actions, paths
+pima resource describe orders   # full contract: access, search/filters, create/update fields, actions, paths
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
+
+The manifest is **gated**: the server filters it to the caller's ability ∩
+token scopes, so inaccessible resources are simply absent and each resource
+carries an `access` block (read/create/update/destroy) reflecting what your
+token can actually do. The cache is keyed per token, so a re-login with
+different scopes gets a fresh manifest automatically.
 
 `resource describe` is the static manifest contract; `resource fields` is the
 live create form. Over MCP this is `pima_resources` / `pima_describe` plus the
@@ -88,7 +94,7 @@ Example client config (read-only):
   "mcpServers": {
     "pima": {
       "command": "npx",
-      "args": ["-y", "@buckmason/pima-cli", "mcp"],
+      "args": ["-y", "@pima-io/cli", "mcp"],
       "env": { "PIMA_HOST": "https://your-pima-instance", "PIMA_TOKEN": "<token>" }
     }
   }
@@ -140,35 +146,18 @@ auth, output, and skills loaders are in `src/lib/`. Skills are markdown in
 
 ---
 
-## Implementation plan
+## Status
 
-Phases (the server-side dependencies — Doorkeeper device-flow provider, scope
-gates, lean header, `/oauth/scopes` — are tracked in the `pima` repo's
-`docs/oauth_api_bridge_plan.md`).
+Implemented: OAuth device-flow auth, read + write commands, the generic
+resource layer (every PIMA catalog resource), manifest-based discovery, the MCP
+server, and the skills catalog. Server-side dependencies (Doorkeeper
+device-flow provider, scope gates, lean header, `/oauth/scopes`,
+`/api_manifest.json` gating) live in the private `pima` repo's
+`docs/oauth_api_bridge_plan.md`.
 
-- **A — Skeleton + transport.** oclif project, `Client` (fetch + `Authorization`
-  + `X-Pima-View: lean` + typed errors), config (`~/.config/pima/config.json`,
-  host resolution). ✅ scaffolded.
-- **B — Auth.** `pima auth login|status|logout` via OAuth **device flow** (poll,
-  no listener). Token in OS keychain (`keytar`); `PIMA_TOKEN` headless override.
-  ✅ scaffolded.
-- **C — Output contract.** table / `--json` / `--csv`; stable exit codes; errors
-  to stderr. Shared `renderList(records, columns)` reads the lean payload's
-  `columns`. ✅ scaffolded.
-- **D — Read commands.** `orders list/show`, `order-item routing`, `sku
-  show/inventory`, `inventory on-hand`, `transfer/po/shipment list/show`,
-  `customer show`, `report run`, `search`. (Each maps 1:1 to an existing
-  endpoint; server adds one `enforce_scope!(:"<domain>:read")`.)
-- **E — Write commands.** ⭐ `order-item reroute` (scaffolded), then
-  `order-item bulk-edit`, `order approve`, `transfer cancel`, `transfer-box
-  set-missing/found`, `po accept/undo`, `inventory adjust`, `credit add` /
-  `coupon apply`. `--dry-run`, `--yes`, prod guard.
-- **F — Tests + DX.** vitest + nock (assert method/path/headers incl.
-  `X-Pima-View`, and rendering). Shell completion, help ergonomics.
-- **G — Agent + MCP.** Document the `PIMA_TOKEN` recipe; expose skills + verbs
-  via an MCP presenter (same auth + endpoints).
-- **H — Skills.** `pima skill` (scaffolded) + the skill catalog; lint that every
-  command/scope referenced in a skill exists.
+The live surface is self-describing — run `pima skill` for the onboarding menu
+and `pima resources` / `pima resource describe <name>` for the current resource
+contract rather than relying on this README.
 
 ## License
 

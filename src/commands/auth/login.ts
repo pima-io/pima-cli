@@ -1,5 +1,6 @@
 import {Command, Flags} from '@oclif/core'
 import {deviceLogin, writeToken} from '../../lib/auth.js'
+import {clearManifestCache} from '../../lib/manifest.js'
 import {resolveHost, saveConfig} from '../../lib/config.js'
 import {READ_ONLY, ALL_SCOPES} from '../../lib/scopes.js'
 
@@ -30,6 +31,9 @@ export default class AuthLogin extends Command {
     this.log(`Authenticating to ${host}…`)
     const token = await deviceLogin(host, scopes)
     await writeToken(host, token)
+    // The manifest is gated by scopes; a new token may resolve a different
+    // surface, so drop any cached manifest for this host.
+    await clearManifestCache(host)
     if (flags.host) await saveConfig({host})
 
     this.log(`\n✓ Logged in to ${host}`)

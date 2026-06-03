@@ -45,11 +45,32 @@ export default class Skill extends Command {
     }
 
     if (!args.name) {
-      if (flags.json) return void this.log(JSON.stringify(skills.map(({body, ...m}) => m), null, 2))
+      // The full self-onboarding menu: EVERY static skill from the loader plus
+      // the live `resources` skill, then a single "Go deeper" footer. An agent
+      // that runs `pima skill` once knows everything it can learn.
+      const RESOURCES_DESC = 'Live agent briefing of the full resource surface (from the API manifest)'
+      if (flags.json) {
+        const entries = [
+          ...skills.map(({body, ...m}) => m),
+          {name: 'resources', description: RESOURCES_DESC, scopes: [], related: ['data-model', 'automation'], live: true},
+        ]
+        return void this.log(JSON.stringify(entries, null, 2))
+      }
+
+      this.log('New here? Start with `pima skill getting-started`.\n')
       this.log('Available skills (run `pima skill <name>` for the full text):\n')
-      for (const s of skills) this.log(`  ${s.name.padEnd(18)} ${s.description}`)
-      this.log(`  ${'resources'.padEnd(18)} Live agent briefing of the full resource surface (from the API manifest)`)
-      this.log('\nNew here? Start with `pima skill getting-started`.')
+
+      const width = Math.max(...skills.map((s) => s.name.length), 'resources'.length)
+      for (const s of skills) this.log(`  ${s.name.padEnd(width)}  ${s.description}`)
+      this.log(`  ${'resources'.padEnd(width)}  ${RESOURCES_DESC}`)
+
+      this.log('\nGo deeper:')
+      this.log('  pima skill <name>                 full text of one skill')
+      this.log('  pima skill --all                  every skill concatenated (slurp once)')
+      this.log('  pima resources                    every resource: domain, scopes, access, fields/filters/actions')
+      this.log('  pima resource describe <name>     full contract for one resource (search, fields, actions, paths)')
+      this.log('  MCP equivalents                   skill://<name> resources, the manifest://resources resource,')
+      this.log('                                    and the pima_describe / pima_resources tools')
       return
     }
 
