@@ -45,11 +45,59 @@ pima po accept 13529 --yes
 pima shipment list --status status_ready --json | jq '.[].id'
 ```
 
+## Issue store credit (CX returns concierge)
+
+```sh
+pima customer show 90210 --json | jq '{name: .record.full_name, balance: .record.current_balance}'
+pima credit add --customer 90210 --amount 25 --note "late shipment goodwill" --dry-run
+pima credit add --customer 90210 --amount 25 --note "late shipment goodwill" --yes
+```
+
+## Create a markdown / coupon (finance)
+
+```sh
+pima resource fields coupons                 # see the keys first
+pima resource create coupons --data '{"code":"SUMMER10","amount":10}' --dry-run
+pima resource create coupons --data '{"code":"SUMMER10","amount":10}' --yes
+```
+
+## Start a cycle count / adjust inventory (ops)
+
+```sh
+pima resource fields cycle_counts
+pima resource create cycle_counts --data '{"location_id":7}' --yes
+# Larger stock corrections: create an inventory_audit, then its audit skus.
+pima resource fields inventory_audits
+```
+
+## Invite a teammate (retail team mgmt)
+
+```sh
+pima resource fields invites
+pima resource create invites --data '{"email":"new.hire@example.com","role":"associate"}' --dry-run
+```
+
+## Pull a report (reporting / finance)
+
+```sh
+pima report get sales_report --param created_from=2026-05-01 --param created_to=2026-05-31 --json | jq '.'
+pima report get inventory_on_hand_report --json
+```
+
+## Receive a clean PO, hold a discrepant one (accounting)
+
+```sh
+pima po show 13529 --json | jq '{vendor: .record.vendor_name, qty: .record.quantity}'
+pima po accept 13529 --yes        # only after the numbers check out
+```
+
 ## Reach a verb that has no dedicated command
 
 ```sh
 # Generic member-action escape hatch (any resource):
 pima resource action transfer_boxes 88 set_missing --yes
+# Generic CRUD for any catalog resource:
+pima resource create order_returns --data '{...}' --yes
 ```
 
 ## Run headless (agents)

@@ -27,6 +27,21 @@ export async function showResource(client: Client, resource: string, id: string 
   return client.get(`/${resource}/${id}.json`)
 }
 
+// Generic create: POST /<resource>.json (gated server-side by <domain>:write).
+export async function createResource(client: Client, resource: string, body: unknown): Promise<any> {
+  return client.request('POST', `/${resource}.json`, body)
+}
+
+// Generic update: PATCH /<resource>/:id.json (gated by <domain>:write).
+export async function updateResource(client: Client, resource: string, id: string | number, body: unknown): Promise<any> {
+  return client.request('PATCH', `/${resource}/${id}.json`, body)
+}
+
+// Generic destroy: DELETE /<resource>/:id.json (gated by <domain>:write).
+export async function destroyResource(client: Client, resource: string, id: string | number): Promise<any> {
+  return client.request('DELETE', `/${resource}/${id}.json`)
+}
+
 // Generic member action: <METHOD> /<resource>/:id/<verb>.json (e.g. accept, undo).
 export async function memberAction(
   client: Client,

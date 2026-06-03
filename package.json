@@ -79,6 +79,9 @@
       "shipment": {
         "description": "Shipments: list, show"
       },
+      "credit": {
+        "description": "Customer store credit: add"
+      },
       "report": {
         "description": "Reports and exports"
       },
