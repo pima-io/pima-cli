@@ -50,6 +50,34 @@ pima skill order-routing --json
 v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
 (backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`).
 
+## MCP server (conversational agents)
+
+`pima mcp` runs an MCP server over stdio so Claude/Codex can drive PIMA in chat,
+reusing your token's scopes. **Read-only by default**; `--write` exposes write
+tools (still bounded by the token).
+
+Tools: `pima_list`, `pima_show`, `pima_fields`, `pima_search`, `pima_routing`,
+`pima_report` — plus `pima_reroute`, `pima_create`, `pima_update`, `pima_action`
+with `--write`. Skills are exposed as MCP resources (`skill://data-model`, …) so
+the agent reads the domain model before acting.
+
+Example client config (read-only):
+
+```json
+{
+  "mcpServers": {
+    "pima": {
+      "command": "npx",
+      "args": ["-y", "@buckmason/pima-cli", "mcp"],
+      "env": { "PIMA_HOST": "https://your-pima-instance", "PIMA_TOKEN": "<token>" }
+    }
+  }
+}
+```
+
+For write access add `"--write"` to `args` and use a token holding the needed
+`:write` scopes.
+
 ## Scopes
 
 GitHub-style `<domain>:<read|write>`. `write` includes `read`. Effective access

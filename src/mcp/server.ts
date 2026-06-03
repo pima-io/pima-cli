@@ -1,0 +1,233 @@
+import {McpServer, ResourceTemplate} from '@modelcontextprotocol/sdk/server/mcp.js'
+import {z} from 'zod'
+import {Client} from '../lib/client.js'
+import {
+  listResource,
+  showResource,
+  createResource,
+  updateResource,
+  destroyResource,
+  memberAction,
+} from '../lib/resource.js'
+import {listSkills, loadSkill} from '../lib/skills.js'
+
+export interface McpOptions {
+  host?: string
+  write?: boolean
+}
+
+type Content = {content: Array<{type: 'text'; text: string}>; isError?: boolean}
+
+const ok = (data: unknown): Content => ({
+  content: [{type: 'text', text: typeof data === 'string' ? data : JSON.stringify(data, null, 2)}],
+})
+const fail = (error: any): Content => ({
+  content: [{type: 'text', text: `Error: ${error?.message ?? String(error)}`}],
+  isError: true,
+})
+
+// Exposes PIMA over MCP for conversational agents. Tools reuse the same Client +
+// resource layer as the CLI; the connected token's scopes bound everything. Read
+// tools + skill resources are always on; write tools require `write: true`.
+export function buildServer(opts: McpOptions = {}): McpServer {
+  const server = new McpServer({name: 'pima', version: '0.1.0'})
+  const client = () => Client.create({host: opts.host})
+
+  // ---- Skills as resources (the agent's domain knowledge) ----
+  server.registerResource(
+    'skill',
+    new ResourceTemplate('skill://{name}', {
+      list: async () => ({
+        resources: (await listSkills()).map((s) => ({
+          uri: `skill://${s.name}`,
+          name: s.name,
+          description: s.description,
+          mimeType: 'text/markdown',
+        })),
+      }),
+    }),
+    {title: 'PIMA skills', description: 'Deep domain knowledge: data model, routing, scopes, automation, recipes.'},
+    async (uri, variables) => {
+      const name = Array.isArray(variables.name) ? variables.name[0] : variables.name
+      const skill = await loadSkill(String(name))
+      if (!skill) throw new Error(`Unknown skill: ${name}`)
+      return {contents: [{uri: uri.href, mimeType: 'text/markdown', text: skill.body}]}
+    },
+  )
+
+  // ---- Read tools ----
+  server.registerTool(
+    'pima_list',
+    {
+      description:
+        'List any PIMA resource (orders, skus, customers, transfers, purchase_orders, shipments, units, coupons, ...). Requires the resource domain :read scope. Read skill "data-model" first if unsure which resource.',
+      inputSchema: {
+        resource: z.string().describe('Resource name, e.g. orders, skus, customers'),
+        q: z.string().optional().describe('Search query'),
+        page: z.number().optional(),
+        variant: z.string().optional().describe('View variant, e.g. shippable'),
+      },
+    },
+    async ({resource, q, page, variant}) => {
+      try {
+        const {records} = await listResource(await client(), resource, {q, page, variant})
+        return ok(records)
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_show',
+    {
+      description: 'Show one PIMA resource record by name + id (full detail payload). Requires the domain :read scope.',
+      inputSchema: {resource: z.string(), id: z.string()},
+    },
+    async ({resource, id}) => {
+      try {
+        return ok(await showResource(await client(), resource, id))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_fields',
+    {
+      description: "Show a resource's create-form fields (keys, types, required) so you know what to pass to pima_create.",
+      inputSchema: {resource: z.string()},
+    },
+    async ({resource}) => {
+      try {
+        const data = await (await client()).get(`/${resource}/new.json`)
+        return ok((data.form?.fields ?? []).map((f: any) => ({key: f.key, type: f.type, required: !!f.required, label: f.label})))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_search',
+    {
+      description: 'Sitewide search across PIMA (orders, products, SKUs, customers). Requires reports:read.',
+      inputSchema: {query: z.string()},
+    },
+    async ({query}) => {
+      try {
+        return ok(await (await client()).get(`/search.json?q=${encodeURIComponent(query)}`))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_routing',
+    {
+      description: 'The order-item routing dashboard (what is unshippable, by location). Requires orders:read.',
+      inputSchema: {location: z.number().optional(), tab: z.string().optional()},
+    },
+    async ({location, tab}) => {
+      try {
+        const qs = new URLSearchParams({tab: tab ?? 'report'})
+        if (location) qs.set('location_id', String(location))
+        return ok(await (await client()).get(`/order_items/routing.json?${qs.toString()}`))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_report',
+    {
+      description: 'Fetch a report as JSON, e.g. sales_report, inventory_on_hand_report. Requires reports:read.',
+      inputSchema: {name: z.string(), params: z.record(z.string()).optional()},
+    },
+    async ({name, params}) => {
+      try {
+        const qs = new URLSearchParams(params ?? {})
+        return ok(await (await client()).get(`/reports/${name}.json?${qs.toString()}`))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  if (!opts.write) return server
+
+  // ---- Write tools (opt-in; still bounded by the token's :write scopes) ----
+  server.registerTool(
+    'pima_reroute',
+    {
+      description: "Reroute an order item to a different fulfillment location. Requires orders:write.",
+      inputSchema: {order_item_id: z.string(), to_location_id: z.number()},
+    },
+    async ({order_item_id, to_location_id}) => {
+      try {
+        return ok(await (await client()).patch(`/order_items/${order_item_id}`, {order_item: {fulfillment_location_id: to_location_id}}))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_create',
+    {
+      description: 'Create any PIMA resource (coupons, customer_credits, invites, memo_assignments, cycle_counts, ...). Requires the domain :write scope. Use pima_fields first.',
+      inputSchema: {resource: z.string(), data: z.record(z.any()).describe('The record fields')},
+    },
+    async ({resource, data}) => {
+      try {
+        return ok(await createResource(await client(), resource, {record: data}))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_update',
+    {
+      description: 'Update any PIMA resource record. Requires the domain :write scope.',
+      inputSchema: {resource: z.string(), id: z.string(), data: z.record(z.any())},
+    },
+    async ({resource, id, data}) => {
+      try {
+        return ok(await updateResource(await client(), resource, id, {record: data}))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_action',
+    {
+      description: 'Run a member action on a resource record, e.g. purchase_orders/13529/accept. Requires the domain :write scope.',
+      inputSchema: {
+        resource: z.string(),
+        id: z.string(),
+        verb: z.string(),
+        method: z.enum(['get', 'post', 'patch']).optional(),
+        data: z.record(z.any()).optional(),
+      },
+    },
+    async ({resource, id, verb, method, data}) => {
+      try {
+        const m = (method ?? 'post').toUpperCase() as 'GET' | 'POST' | 'PATCH'
+        return ok(await memberAction(await client(), m, resource, id, verb, data))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  void destroyResource // available for a future pima_delete tool
+
+  return server
+}

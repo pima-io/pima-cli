@@ -74,6 +74,15 @@ Use the session-independent equivalents instead:
 If an action 422s asking you to "clock in," it's session-bound — find the
 API-shaped equivalent or hand it to a human at a station.
 
+## Conversational use (MCP)
+
+`pima mcp` exposes these capabilities as MCP tools so an agent can drive PIMA in
+chat. Read tools (`pima_list`, `pima_show`, `pima_fields`, `pima_search`,
+`pima_routing`, `pima_report`) are always on; write tools (`pima_reroute`,
+`pima_create`, `pima_update`, `pima_action`) require `--write`. Every skill is
+also an MCP resource (`skill://<name>`) — read `skill://data-model` first. The
+connected token's scopes bound everything, exactly as on the CLI.
+
 ## Designing an automation
 
 1. Decide the **minimum scopes** the job needs and request exactly those

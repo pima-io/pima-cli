@@ -19,10 +19,12 @@
   "license": "MIT",
   "repository": "buckmason/pima-cli",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1",
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "cli-table3": "^0.6",
-    "open": "^10"
+    "open": "^10",
+    "zod": "^3"
   },
   "devDependencies": {
     "@types/node": "^20",
