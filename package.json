@@ -13,15 +13,13 @@
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "cli-table3": "^0.6",
-    "keytar": "^7",
     "open": "^10"
   },
   "devDependencies": {
     "@types/node": "^20",
     "oclif": "^4",
     "typescript": "^5",
-    "vitest": "^2",
-    "nock": "^13"
+    "vitest": "^2"
   },
   "scripts": {
     "build": "tsc -b",
@@ -39,7 +37,16 @@
     "topics": {
       "auth": { "description": "Authenticate with a PIMA instance (OAuth device flow, gh-style)" },
       "orders": { "description": "Orders: list, show" },
-      "order-item": { "description": "Order items: reroute fulfillment location, bulk-edit" }
+      "order-item": { "description": "Order items: reroute fulfillment location, routing dashboard" },
+      "sku": { "description": "SKUs: show detail and inventory" },
+      "product": { "description": "Products: show detail" },
+      "customer": { "description": "Customers: show detail" },
+      "transfer": { "description": "Transfers: list, show" },
+      "transfer-box": { "description": "Transfer boxes: set missing/found" },
+      "po": { "description": "Purchase orders: list, show, accept, undo" },
+      "shipment": { "description": "Shipments: list, show" },
+      "report": { "description": "Reports and exports" },
+      "resource": { "description": "Generic access to any PIMA resource (escape hatch)" }
     }
   }
 }

@@ -1,9 +1,6 @@
-import keytar from 'keytar'
 import open from 'open'
 import {CLIENT_ID} from './config.js'
-
-// Token storage: OS keychain, keyed by host so multiple instances coexist.
-const SERVICE = 'pima-cli'
+import {getEntry, setEntry, deleteEntry} from './store.js'
 
 export interface StoredToken {
   access_token: string
@@ -13,20 +10,19 @@ export interface StoredToken {
 }
 
 export async function readToken(host: string): Promise<StoredToken | null> {
-  // Agent/headless override: PIMA_TOKEN bypasses the keychain entirely.
+  // Agent/headless override: PIMA_TOKEN bypasses the store entirely.
   if (process.env.PIMA_TOKEN) {
     return {access_token: process.env.PIMA_TOKEN, scopes: []}
   }
-  const raw = await keytar.getPassword(SERVICE, host)
-  return raw ? (JSON.parse(raw) as StoredToken) : null
+  return getEntry<StoredToken>(host)
 }
 
 export async function writeToken(host: string, token: StoredToken): Promise<void> {
-  await keytar.setPassword(SERVICE, host, JSON.stringify(token))
+  await setEntry(host, token)
 }
 
 export async function deleteToken(host: string): Promise<boolean> {
-  return keytar.deletePassword(SERVICE, host)
+  return deleteEntry(host)
 }
 
 interface DeviceCode {
