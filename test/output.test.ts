@@ -1,4 +1,5 @@
-import {describe, it, expect} from 'vitest'
+import {describe, it} from 'node:test'
+import assert from 'node:assert/strict'
 import {renderList, renderRecord} from '../src/lib/output.js'
 
 const columns = [
@@ -12,29 +13,29 @@ const rows = [
 
 describe('renderList', () => {
   it('passes JSON through unchanged', () => {
-    expect(JSON.parse(renderList(rows, columns, 'json'))).toEqual(rows)
+    assert.deepEqual(JSON.parse(renderList(rows, columns, 'json')), rows)
   })
 
   it('renders a CSV header + escaped values', () => {
     const csv = renderList(rows, columns, 'csv')
-    expect(csv.split('\n')[0]).toBe('ID,Name')
-    expect(csv).toContain('"Beta, Inc."') // comma forces quoting
+    assert.equal(csv.split('\n')[0], 'ID,Name')
+    assert.ok(csv.includes('"Beta, Inc."')) // comma forces quoting
   })
 
   it('renders a human table with headers and values', () => {
     const table = renderList(rows, columns, 'table')
-    expect(table).toContain('ID')
-    expect(table).toContain('Alpha')
+    assert.ok(table.includes('ID'))
+    assert.ok(table.includes('Alpha'))
   })
 
   it('flattens nested {label} cells', () => {
     const out = renderList([{id: 1, name: {label: 'Nested'}}], columns, 'csv')
-    expect(out).toContain('Nested')
+    assert.ok(out.includes('Nested'))
   })
 })
 
 describe('renderRecord', () => {
   it('passes JSON through', () => {
-    expect(JSON.parse(renderRecord({a: 1}, 'json'))).toEqual({a: 1})
+    assert.deepEqual(JSON.parse(renderRecord({a: 1}, 'json')), {a: 1})
   })
 })

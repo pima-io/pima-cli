@@ -2,11 +2,20 @@
   "name": "@buckmason/pima-cli",
   "version": "0.0.0",
   "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
-  "bin": { "pima": "./bin/run.js" },
+  "bin": {
+    "pima": "./bin/run.js"
+  },
   "type": "module",
   "exports": "./dist/index.js",
-  "files": ["/bin", "/dist", "/skills", "/oclif.manifest.json"],
-  "engines": { "node": ">=20" },
+  "files": [
+    "/bin",
+    "/dist",
+    "/skills",
+    "/oclif.manifest.json"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT",
   "repository": "buckmason/pima-cli",
   "dependencies": {
@@ -18,13 +27,16 @@
   "devDependencies": {
     "@types/node": "^20",
     "oclif": "^4",
-    "typescript": "^5",
-    "vitest": "^2"
+    "tsx": "^4",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0"
   },
   "scripts": {
     "build": "tsc -b",
     "dev": "./bin/dev.js",
-    "test": "vitest run",
+    "test": "node --import tsx --test test/*.test.ts",
     "lint:skills": "node ./dist/lib/lint-skills.js",
     "prepack": "tsc -b && oclif manifest"
   },
@@ -33,20 +45,46 @@
     "dirname": "pima",
     "commands": "./dist/commands",
     "topicSeparator": " ",
-    "plugins": ["@oclif/plugin-help"],
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
     "topics": {
-      "auth": { "description": "Authenticate with a PIMA instance (OAuth device flow, gh-style)" },
-      "orders": { "description": "Orders: list, show" },
-      "order-item": { "description": "Order items: reroute fulfillment location, routing dashboard" },
-      "sku": { "description": "SKUs: show detail and inventory" },
-      "product": { "description": "Products: show detail" },
-      "customer": { "description": "Customers: show detail" },
-      "transfer": { "description": "Transfers: list, show" },
-      "transfer-box": { "description": "Transfer boxes: set missing/found" },
-      "po": { "description": "Purchase orders: list, show, accept, undo" },
-      "shipment": { "description": "Shipments: list, show" },
-      "report": { "description": "Reports and exports" },
-      "resource": { "description": "Generic access to any PIMA resource (escape hatch)" }
+      "auth": {
+        "description": "Authenticate with a PIMA instance (OAuth device flow, gh-style)"
+      },
+      "orders": {
+        "description": "Orders: list, show"
+      },
+      "order-item": {
+        "description": "Order items: reroute fulfillment location, routing dashboard"
+      },
+      "sku": {
+        "description": "SKUs: show detail and inventory"
+      },
+      "product": {
+        "description": "Products: show detail"
+      },
+      "customer": {
+        "description": "Customers: show detail"
+      },
+      "transfer": {
+        "description": "Transfers: list, show"
+      },
+      "transfer-box": {
+        "description": "Transfer boxes: set missing/found"
+      },
+      "po": {
+        "description": "Purchase orders: list, show, accept, undo"
+      },
+      "shipment": {
+        "description": "Shipments: list, show"
+      },
+      "report": {
+        "description": "Reports and exports"
+      },
+      "resource": {
+        "description": "Generic access to any PIMA resource (escape hatch)"
+      }
     }
   }
 }
