@@ -10,6 +10,7 @@ import {
   memberAction,
 } from '../lib/resource.js'
 import {listSkills, loadSkill} from '../lib/skills.js'
+import {fetchManifest, findResource} from '../lib/manifest.js'
 
 export interface McpOptions {
   host?: string
@@ -55,7 +56,66 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
   )
 
+  // ---- The API manifest as a resource (the full surface, on demand) ----
+  server.registerResource(
+    'manifest',
+    'manifest://resources',
+    {
+      title: 'PIMA API manifest',
+      description: 'The full resource surface: every resource with its scopes, search/filters, fields, and actions.',
+      mimeType: 'application/json',
+    },
+    async (uri) => {
+      const manifest = await fetchManifest({host: opts.host})
+      return {contents: [{uri: uri.href, mimeType: 'application/json', text: JSON.stringify(manifest, null, 2)}]}
+    },
+  )
+
   // ---- Read tools ----
+  server.registerTool(
+    'pima_resources',
+    {
+      description:
+        'List the full PIMA resource surface from the API manifest (id, domain, scopes, supported actions). Optionally filter by domain. Use this to discover what exists before pima_describe / pima_list.',
+      inputSchema: {domain: z.string().optional().describe('Filter to one domain, e.g. orders, inventory')},
+    },
+    async ({domain}) => {
+      try {
+        const manifest = await fetchManifest({host: opts.host})
+        const resources = (manifest.resources ?? []).filter((r) => !domain || r.domain === domain)
+        return ok(
+          resources.map((r) => ({
+            id: r.id,
+            domain: r.domain,
+            scopes: r.scopes,
+            supports: r.supports,
+          })),
+        )
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_describe',
+    {
+      description:
+        "Describe one PIMA resource from the API manifest: domain, scopes, search/filter params, create/update fields, and member/collection actions. Read this before pima_create / pima_action to know the contract.",
+      inputSchema: {resource: z.string().describe('Resource id (singular or plural), e.g. orders, coupon')},
+    },
+    async ({resource}) => {
+      try {
+        const manifest = await fetchManifest({host: opts.host})
+        const entry = findResource(manifest, resource)
+        if (!entry) return fail(new Error(`Unknown resource: ${resource}`))
+        return ok(entry)
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
   server.registerTool(
     'pima_list',
     {

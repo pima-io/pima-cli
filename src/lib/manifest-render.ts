@@ -1,0 +1,168 @@
+import type {Manifest, ManifestResource, ManifestField, ManifestAction} from './manifest.js'
+
+// Human-readable renderers for the manifest, shared by `resource describe` and
+// the live `skill resources` briefing so the two never drift.
+
+function scopeLine(r: ManifestResource): string {
+  if (!r.scopes) return 'scopes: (public / none)'
+  const parts: string[] = []
+  if (r.scopes.read) parts.push(`read=${r.scopes.read}`)
+  if (r.scopes.write) parts.push(`write=${r.scopes.write}`)
+  return `scopes: ${parts.length ? parts.join(' ') : '(none)'}`
+}
+
+function fieldLine(f: ManifestField): string {
+  const tags: string[] = [f.type]
+  if (f.required) tags.push('required')
+  if (f.read_only) tags.push('read-only')
+  if (f.multiple) tags.push('multiple')
+  if (f.options_resource) tags.push(`→ ${f.options_resource}`)
+  else if (f.choices?.length) tags.push(`choices: ${f.choices.map((c) => c.value).join('|')}`)
+  return `  ${f.key} (${tags.join(', ')})`
+}
+
+function actionLine(a: ManifestAction): string {
+  return `  ${a.name} [${a.method}] ${a.path}`
+}
+
+// Full human-readable detail for one resource (the `resource describe` body).
+export function renderResourceDetail(r: ManifestResource): string {
+  const out: string[] = []
+  out.push(`${r.id}${r.title ? ` — ${r.title}` : ''}`)
+  if (r.model) out.push(`model: ${r.model}${r.singular ? `  singular: ${r.singular}` : ''}`)
+  out.push(`domain: ${r.domain ?? '(none)'}`)
+  out.push(scopeLine(r))
+
+  const supports = Object.entries(r.supports ?? {})
+    .filter(([, v]) => v)
+    .map(([k]) => k)
+  out.push(`supports: ${supports.length ? supports.join(', ') : '(none)'}`)
+
+  // Search
+  const searchFields = r.search?.fields ?? []
+  out.push('')
+  out.push('SEARCH:')
+  out.push(
+    searchFields.length
+      ? `  fields: ${searchFields.join(', ')}${r.search?.placeholder ? `  (“${r.search.placeholder}”)` : ''}`
+      : '  (none)',
+  )
+
+  // Filters
+  out.push('')
+  out.push('FILTERS:')
+  if (r.filters?.length) {
+    for (const f of r.filters) {
+      const detail: string[] = [f.type]
+      if (f.options_resource) detail.push(`→ ${f.options_resource}`)
+      else if (f.choices?.length) detail.push(`choices: ${f.choices.map((c) => c.value).join('|')}`)
+      out.push(`  ${f.key} (${detail.join(', ')})`)
+    }
+  } else {
+    out.push('  (none)')
+  }
+
+  // Create / update fields
+  const writable = (r.fields ?? []).filter((f) => !f.read_only)
+  out.push('')
+  out.push('CREATE/UPDATE FIELDS:')
+  if (writable.length) {
+    for (const f of writable) out.push(fieldLine(f))
+  } else {
+    out.push('  (none)')
+  }
+
+  const readOnly = (r.fields ?? []).filter((f) => f.read_only)
+  if (readOnly.length) {
+    out.push('')
+    out.push('READ-ONLY FIELDS:')
+    for (const f of readOnly) out.push(fieldLine(f))
+  }
+
+  // Actions
+  out.push('')
+  out.push('MEMBER ACTIONS:')
+  if (r.member_actions?.length) {
+    for (const a of r.member_actions) out.push(actionLine(a))
+  } else {
+    out.push('  (none)')
+  }
+
+  out.push('')
+  out.push('COLLECTION ACTIONS:')
+  if (r.collection_actions?.length) {
+    for (const a of r.collection_actions) out.push(actionLine(a))
+  } else {
+    out.push('  (none)')
+  }
+
+  // Paths
+  out.push('')
+  out.push('PATHS:')
+  for (const [k, v] of Object.entries(r.paths ?? {})) {
+    if (v) out.push(`  ${k}: ${v}`)
+  }
+
+  return out.join('\n')
+}
+
+// Live agent briefing: every resource grouped by domain, with its search /
+// filter params, key create fields, and member actions. Markdown.
+export function renderResourcesBriefing(manifest: Manifest): string {
+  const resources = [...(manifest.resources ?? [])].sort((a, b) =>
+    (a.domain ?? '').localeCompare(b.domain ?? '') || a.id.localeCompare(b.id),
+  )
+
+  const byDomain = new Map<string, ManifestResource[]>()
+  for (const r of resources) {
+    const d = r.domain ?? '(no domain)'
+    if (!byDomain.has(d)) byDomain.set(d, [])
+    byDomain.get(d)!.push(r)
+  }
+
+  const out: string[] = []
+  out.push('# PIMA resource surface (live from /api_manifest.json)')
+  out.push('')
+  out.push(
+    `Manifest v${manifest.version} — ${resources.length} resource(s) across ${byDomain.size} domain(s). ` +
+      'Use `pima resource describe <name>` for full detail, or the `pima_describe` MCP tool.',
+  )
+
+  for (const [domain, list] of byDomain) {
+    out.push('')
+    out.push(`## ${domain}`)
+    for (const r of list) {
+      const scopes = r.scopes
+        ? [r.scopes.read && `r:${r.scopes.read}`, r.scopes.write && `w:${r.scopes.write}`].filter(Boolean).join(' ')
+        : 'public'
+      out.push('')
+      out.push(`### ${r.id}${r.title ? ` — ${r.title}` : ''}  (${scopes})`)
+
+      const search = r.search?.fields ?? []
+      if (search.length) out.push(`- search: ${search.join(', ')}`)
+
+      if (r.filters?.length) {
+        out.push(
+          `- filters: ${r.filters
+            .map((f) => (f.options_resource ? `${f.key}→${f.options_resource}` : f.key))
+            .join(', ')}`,
+        )
+      }
+
+      const create = (r.fields ?? []).filter((f) => !f.read_only)
+      if (create.length) {
+        out.push(
+          `- create fields: ${create
+            .map((f) => `${f.key}${f.required ? '*' : ''}`)
+            .join(', ')}`,
+        )
+      }
+
+      if (r.member_actions?.length) {
+        out.push(`- actions: ${r.member_actions.map((a) => a.name).join(', ')}`)
+      }
+    }
+  }
+
+  return out.join('\n')
+}

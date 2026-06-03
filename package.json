@@ -89,6 +89,9 @@
       },
       "resource": {
         "description": "Generic access to any PIMA resource (escape hatch)"
+      },
+      "resources": {
+        "description": "Discover the full resource surface from the live API manifest"
       }
     }
   }

@@ -50,16 +50,36 @@ pima skill order-routing --json
 v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
 (backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`).
 
+## Discoverability
+
+The server self-describes its full resource surface at
+`GET /api_manifest.json`. The CLI fetches and caches it (24h) so you—or an
+agent—can introspect before acting:
+
+```
+pima resources                  # every resource: id, domain, scopes, #fields/#filters/#actions
+pima resources --domain orders  # filter to one domain
+pima resource describe orders   # full contract: search/filters, create/update fields, actions, paths
+pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
+```
+
+`resource describe` is the static manifest contract; `resource fields` is the
+live create form. Over MCP this is `pima_resources` / `pima_describe` plus the
+`manifest://resources` resource. Add `--refresh` to any of these to bypass the
+cache.
+
 ## MCP server (conversational agents)
 
 `pima mcp` runs an MCP server over stdio so Claude/Codex can drive PIMA in chat,
 reusing your token's scopes. **Read-only by default**; `--write` exposes write
 tools (still bounded by the token).
 
-Tools: `pima_list`, `pima_show`, `pima_fields`, `pima_search`, `pima_routing`,
-`pima_report` — plus `pima_reroute`, `pima_create`, `pima_update`, `pima_action`
-with `--write`. Skills are exposed as MCP resources (`skill://data-model`, …) so
-the agent reads the domain model before acting.
+Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
+`pima_fields`, `pima_search`, `pima_routing`, `pima_report` — plus
+`pima_reroute`, `pima_create`, `pima_update`, `pima_action` with `--write`.
+Skills are exposed as MCP resources (`skill://data-model`, …) and the full
+surface as `manifest://resources`, so the agent introspects and reads the domain
+model before acting.
 
 Example client config (read-only):
 

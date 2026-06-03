@@ -18,6 +18,24 @@ This is the master reference for what the CLI can do. Two layers:
 Everything is bounded by your token's scopes (writes need `<domain>:write`) AND
 your PIMA role. Every write is attributed to your token in the audit trail.
 
+## Discoverability — find the surface first
+
+Don't guess what exists. The server self-describes via `GET /api_manifest.json`,
+surfaced as:
+
+```sh
+pima resources                       # every resource: id, domain, scopes, #fields/#filters/#actions
+pima resources --domain orders       # filter to one domain
+pima resource describe <name>        # full contract: search/filter params, create/update fields, actions, paths
+pima skill resources                 # LIVE agent briefing rendered from the manifest, grouped by domain
+```
+
+`resource describe` is the static contract from the manifest (what the resource
+*is*); `resource fields` is the live create form (what the server *currently*
+accepts). Over MCP the same introspection is `pima_resources` (list) and
+`pima_describe` (one resource), plus the `manifest://resources` resource. Lead
+with these before `pima_list` / `pima_create`.
+
 ## The generic resource layer (the big unlock)
 
 Any catalog resource — `coupons`, `customer_credits`, `invites`, `memos`,
@@ -77,11 +95,13 @@ API-shaped equivalent or hand it to a human at a station.
 ## Conversational use (MCP)
 
 `pima mcp` exposes these capabilities as MCP tools so an agent can drive PIMA in
-chat. Read tools (`pima_list`, `pima_show`, `pima_fields`, `pima_search`,
-`pima_routing`, `pima_report`) are always on; write tools (`pima_reroute`,
-`pima_create`, `pima_update`, `pima_action`) require `--write`. Every skill is
-also an MCP resource (`skill://<name>`) — read `skill://data-model` first. The
-connected token's scopes bound everything, exactly as on the CLI.
+chat. Read tools (`pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
+`pima_fields`, `pima_search`, `pima_routing`, `pima_report`) are always on; write
+tools (`pima_reroute`, `pima_create`, `pima_update`, `pima_action`) require
+`--write`. Every skill is also an MCP resource (`skill://<name>`) and the full
+surface is `manifest://resources` — introspect with `pima_resources` /
+`pima_describe`, then read `skill://data-model`. The connected token's scopes
+bound everything, exactly as on the CLI.
 
 ## Designing an automation
 
