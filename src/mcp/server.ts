@@ -8,9 +8,14 @@ import {
   updateResource,
   destroyResource,
   memberAction,
+  resourceHistory,
+  listResourceComments,
+  createResourceComment,
 } from '../lib/resource.js'
 import {listSkills, loadSkill} from '../lib/skills.js'
 import {fetchManifest, findResource} from '../lib/manifest.js'
+import {resolveHost} from '../lib/config.js'
+import {resourceAppUrl} from '../lib/links.js'
 
 export interface McpOptions {
   host?: string
@@ -139,6 +144,36 @@ export function buildServer(opts: McpOptions = {}): McpServer {
   )
 
   server.registerTool(
+    'pima_link',
+    {
+      description: 'Build a direct Pima.io URL for a resource index/view/filter set or record.',
+      inputSchema: {
+        resource: z.string(),
+        id: z.string().optional(),
+        action: z.enum(['index', 'show', 'new', 'edit']).optional(),
+        q: z.string().optional(),
+        page: z.number().optional(),
+        variant: z.string().optional(),
+        sort: z.string().optional(),
+        direction: z.enum(['asc', 'desc']).optional(),
+        filters: z.record(z.any()).optional(),
+      },
+    },
+    async ({resource, id, action, q, page, variant, sort, direction, filters}) => {
+      try {
+        const manifest = await fetchManifest({host: opts.host})
+        const entry = findResource(manifest, resource)
+        if (!entry) return fail(new Error(`Unknown resource: ${resource}`))
+        return ok({
+          url: resourceAppUrl(await resolveHost(opts.host), entry, {id, action, q, page, variant, sort, direction, filters}),
+        })
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
     'pima_show',
     {
       description: 'Show one PIMA resource record by name + id (full detail payload). Requires the domain :read scope.',
@@ -147,6 +182,40 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     async ({resource, id}) => {
       try {
         return ok(await showResource(await client(), resource, id))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_history',
+    {
+      description: 'Read PaperTrail history for a resource record. Requires the resource domain :read scope.',
+      inputSchema: {resource: z.string(), id: z.string(), page: z.number().optional()},
+    },
+    async ({resource, id, page}) => {
+      try {
+        const manifest = await fetchManifest({host: opts.host})
+        const entry = findResource(manifest, resource)
+        if (!entry) return fail(new Error(`Unknown resource: ${resource}`))
+        if (!entry.model) return fail(new Error(`${entry.id} does not expose a model name for history lookup.`))
+        return ok(await resourceHistory(await client(), entry.model, id, page))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_comments',
+    {
+      description: 'Read comments and @-mention metadata for a resource record. Requires the resource domain :read scope.',
+      inputSchema: {resource: z.string(), id: z.string()},
+    },
+    async ({resource, id}) => {
+      try {
+        return ok(await listResourceComments(await client(), resource, id))
       } catch (error) {
         return fail(error)
       }
@@ -281,6 +350,21 @@ export function buildServer(opts: McpOptions = {}): McpServer {
       try {
         const m = (method ?? 'post').toUpperCase() as 'GET' | 'POST' | 'PATCH'
         return ok(await memberAction(await client(), m, resource, id, verb, data))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_comment',
+    {
+      description: 'Create a comment on a resource record. @mentions are resolved by PIMA. Requires the resource domain :write scope.',
+      inputSchema: {resource: z.string(), id: z.string(), text: z.string()},
+    },
+    async ({resource, id, text}) => {
+      try {
+        return ok(await createResourceComment(await client(), resource, id, text))
       } catch (error) {
         return fail(error)
       }

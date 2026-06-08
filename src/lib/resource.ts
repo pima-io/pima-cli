@@ -1,5 +1,6 @@
 import {Client} from './client.js'
 import type {Column} from './output.js'
+import {resourceSearchParams, type ResourceFilters, type ResourceFilterValue} from './params.js'
 
 export interface ListResult {
   records: any[]
@@ -30,50 +31,35 @@ export interface ResourceExportParams {
   legacy_path?: string
   owner_resource?: string
   owner_id?: string | number
-  filters?: Record<string, string | number | boolean | Array<string | number> | undefined>
+  filters?: ResourceFilters
   to_email?: boolean
+}
+
+export interface ResourceListParams {
+  q?: string
+  page?: string | number
+  per_page?: string | number
+  sort?: string
+  direction?: string
+  variant?: string
+  filters?: ResourceFilters
+  [key: string]: ResourceFilterValue | ResourceFilters
 }
 
 // Generic index against any react_ui catalog resource: GET /<resource>.json.
 export async function listResource(
   client: Client,
   resource: string,
-  params: Record<string, string | number | undefined> = {},
+  params: ResourceListParams = {},
 ): Promise<ListResult> {
-  const qs = new URLSearchParams()
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== '') qs.set(key, String(value))
-  }
+  const qs = resourceSearchParams(params)
   const data = await client.get(`/${resource}.json?${qs.toString()}`)
   const columns: Column[] = (data.resource?.columns ?? []).map((c: any) => ({key: c.key, label: c.label}))
   return {records: data.records ?? [], columns, pagination: data.pagination}
 }
 
 function resourceParams(params: ResourceExportParams): URLSearchParams {
-  const qs = new URLSearchParams()
-  const scalar: Array<keyof ResourceExportParams> = [
-    'q',
-    'sort',
-    'direction',
-    'variant',
-    'legacy_path',
-    'owner_resource',
-    'owner_id',
-  ]
-
-  for (const key of scalar) {
-    const value = params[key]
-    if (value !== undefined && value !== '') qs.set(key, String(value))
-  }
-  if (params.to_email) qs.set('to_email', '1')
-
-  for (const [key, value] of Object.entries(params.filters ?? {})) {
-    if (value === undefined || value === '' || value === false) continue
-    if (Array.isArray(value) && value.length === 0) continue
-    qs.set(`filters[${key}]`, Array.isArray(value) ? value.join(',') : String(value))
-  }
-
-  return qs
+  return resourceSearchParams(params)
 }
 
 // Start an async server-side CSV export for any React resource index.
@@ -121,4 +107,68 @@ export async function memberAction(
   body?: unknown,
 ): Promise<any> {
   return client.request(method, `/${resource}/${id}/${verb}.json`, body)
+}
+
+export interface VersionHistory {
+  label: string
+  item_type: string
+  item_id: number | string
+  supports_history: boolean
+  versions: Array<{
+    id: string
+    event: string
+    label: string
+    author?: {label?: string; username?: string; full_name?: string}
+    created_at?: string
+    changes: Array<{label: string; from?: unknown; to?: unknown}>
+  }>
+  pagination?: {page: number; per_page: number; total_entries: number; total_pages: number}
+}
+
+export async function resourceHistory(
+  client: Client,
+  itemType: string,
+  id: string | number,
+  page?: string | number,
+): Promise<VersionHistory> {
+  const qs = new URLSearchParams({item_type: itemType, item_id: String(id)})
+  if (page !== undefined && page !== '') qs.set('page', String(page))
+  return client.get(`/versions.json?${qs.toString()}`)
+}
+
+export interface ResourceComments {
+  comments: Array<{
+    id: number
+    text_md: string
+    text_html?: string
+    created_at?: string
+    updated_at?: string
+    anchor?: string
+    path?: string
+    react_path?: string
+    author?: {username?: string; full_name?: string; label?: string}
+    mentioned_users?: Array<{username?: string; full_name?: string; label?: string}>
+    can_destroy?: boolean
+  }>
+  mentionables: Array<{type: string; name: string; avatar_url?: string | null}>
+  can_create: boolean
+}
+
+export async function listResourceComments(
+  client: Client,
+  resource: string,
+  id: string | number,
+): Promise<ResourceComments> {
+  const qs = new URLSearchParams({resource, record_id: String(id)})
+  return client.get(`/comments.json?${qs.toString()}`)
+}
+
+export async function createResourceComment(
+  client: Client,
+  resource: string,
+  id: string | number,
+  textMd: string,
+): Promise<{comment: ResourceComments['comments'][number]}> {
+  const qs = new URLSearchParams({resource, record_id: String(id)})
+  return client.post(`/comments.json?${qs.toString()}`, {comment: {text_md: textMd}})
 }

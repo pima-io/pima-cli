@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyResourceAccess} from '../../lib/access.js'
 
 // Flagship write command. Maps to the session-independent RESTful order-item
 // update endpoint (PATCH /order_items/:id), gated server-side by orders:write.
@@ -25,18 +26,19 @@ export default class OrderItemReroute extends BaseCommand {
     const path = `/order_items/${args.id}`
     const body = {order_item: {fulfillment_location_id: flags.to}}
 
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → PATCH ${path}`)
-      this.log(JSON.stringify(body, null, 2))
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to reroute order item ${args.id} → location ${flags.to}.`)
-      this.log('Re-run with --yes to confirm (or --dry-run to preview).')
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        await verifyResourceAccess({host: flags.host, resource: 'order_items', verb: 'update'})
+        this.log(`DRY RUN → PATCH ${path}`)
+        this.log(JSON.stringify(body, null, 2))
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to reroute order item ${args.id} → location ${flags.to}.`)
+        this.log('Re-run with --yes to confirm (or --dry-run to preview).')
+        return
+      }
+
       const client = await this.client(flags.host)
       const data = await client.patch(path, body)
       this.log(flags.json ? JSON.stringify(data, null, 2) : `✓ Order item ${args.id} rerouted to location ${flags.to}.`)

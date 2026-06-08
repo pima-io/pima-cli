@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyResourceAccess} from '../../lib/access.js'
 import {destroyResource} from '../../lib/resource.js'
 
 // Generic destroy — gated server-side by the resource's <domain>:write scope.
@@ -19,16 +20,17 @@ export default class ResourceDelete extends BaseCommand {
   async run(): Promise<void> {
     const {args, flags} = await this.parse(ResourceDelete)
 
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → DELETE /${args.resource}/${args.id}.json`)
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to DELETE ${args.resource}/${args.id}. Re-run with --yes to confirm.`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        const resource = await verifyResourceAccess({host: flags.host, resource: args.resource, verb: 'destroy'})
+        this.log(`DRY RUN → DELETE /${resource.id}/${args.id}.json`)
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to DELETE ${args.resource}/${args.id}. Re-run with --yes to confirm.`)
+        return
+      }
+
       const client = await this.client(flags.host)
       await destroyResource(client, args.resource, args.id)
       this.log(`✓ Deleted ${args.resource}/${args.id}.`)

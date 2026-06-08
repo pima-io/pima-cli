@@ -1,5 +1,6 @@
 import {Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyResourceAccess} from '../../lib/access.js'
 import {createResource} from '../../lib/resource.js'
 
 // Friendly wrapper over `resource create customer_credits`. Requires customers:write.
@@ -27,17 +28,18 @@ export default class CreditAdd extends BaseCommand {
       },
     }
 
-    if (flags['dry-run']) {
-      this.log('DRY RUN → POST /customer_credits.json')
-      this.log(JSON.stringify(body, null, 2))
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to issue $${flags.amount} store credit to customer ${flags.customer}. Re-run with --yes to confirm.`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        await verifyResourceAccess({host: flags.host, resource: 'customer_credits', verb: 'create'})
+        this.log('DRY RUN → POST /customer_credits.json')
+        this.log(JSON.stringify(body, null, 2))
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to issue $${flags.amount} store credit to customer ${flags.customer}. Re-run with --yes to confirm.`)
+        return
+      }
+
       const client = await this.client(flags.host)
       const data = await createResource(client, 'customer_credits', body)
       this.log(flags.json ? JSON.stringify(data, null, 2) : `✓ Issued $${flags.amount} store credit to customer ${flags.customer}.`)

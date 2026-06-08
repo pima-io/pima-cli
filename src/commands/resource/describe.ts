@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {resolveHost} from '../../lib/config.js'
 import {fetchManifest, findResource} from '../../lib/manifest.js'
 import {renderResourceDetail} from '../../lib/manifest-render.js'
 
@@ -35,7 +36,7 @@ export default class ResourceDescribe extends BaseCommand {
         this.log(JSON.stringify(resource, null, 2))
         return
       }
-      this.log(renderResourceDetail(resource, manifest.gated))
+      this.log(renderResourceDetail(resource, manifest.gated, await resolveHost(flags.host)))
     } catch (error) {
       this.fail(error)
     }

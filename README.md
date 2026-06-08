@@ -48,7 +48,8 @@ pima skill order-routing --json
 ```
 
 v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
-(backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`).
+(backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`, `versions`,
+`comments`).
 
 ## Discoverability
 
@@ -60,7 +61,10 @@ agent—can introspect before acting:
 pima resources                  # every resource: id, domain, scopes, access (r/c/u/d), #fields/#filters/#actions
 pima resources --domain orders  # filter to one domain
 pima resource describe orders   # full contract: access, search/filters, create/update fields, actions, paths
+pima resource link orders --filter status=shippable  # browser URL for a resource/filter context
 pima resource export customers --q Dolph  # server-side CSV export, with filters/sort/view preserved
+pima resource history order_items 12345   # PaperTrail history for a resource record
+pima resource comments products 42        # comments + @-mention metadata
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
 
@@ -130,7 +134,9 @@ Full taxonomy: `pima skill scopes`.
 
 `--json` (lean JSON), `--csv` (exports), default human table. Exit codes:
 `0` ok · `1` error · `3` auth/scope denied · `4` not found · `5` validation.
-Write commands support `--dry-run` and require `--yes`.
+Write commands support `--dry-run` and require `--yes`. Dry-runs authenticate
+and check the live manifest access/action before printing the request, but they
+do not send the mutation.
 
 ## Develop
 

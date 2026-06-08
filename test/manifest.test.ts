@@ -2,6 +2,7 @@ import {describe, it, beforeEach, afterEach} from 'node:test'
 import assert from 'node:assert/strict'
 import {fetchManifest, findResource, clearManifestCache, type Manifest} from '../src/lib/manifest.js'
 import {renderResourceDetail, renderResourcesBriefing, accessCell} from '../src/lib/manifest-render.js'
+import {resourceAppUrl} from '../src/lib/links.js'
 
 const SAMPLE: Manifest = {
   version: '1',
@@ -30,7 +31,7 @@ const SAMPLE: Manifest = {
         {key: 'note', label: 'Note', type: 'text'},
         {key: 'id', label: 'ID', type: 'integer', read_only: true},
       ],
-      views: [{id: 'shippable', title: 'Shippable'}],
+      views: [{id: 'shippable', title: 'Shippable', path: '/orders/shippable', react_path: '/app/orders/shippable'}],
       member_actions: [
         {name: 'cancel', method: 'POST|PATCH', path: '/orders/{id}/cancel', mutating: true},
         {name: 'invoice', method: 'GET', path: '/orders/{id}/invoice', mutating: false},
@@ -160,6 +161,20 @@ describe('manifest rendering', () => {
     assert.match(out, /cancel \[POST\|PATCH\] \/orders\/\{id\}\/cancel \[mutating\]/) // mutating action
     assert.match(out, /invoice \[GET\] \/orders\/\{id\}\/invoice \[read-only\]/) // non-mutating action
     assert.match(out, /bulk_edit \[POST\] \/orders\/bulk_edit \[mutating\]/) // collection action
+  })
+
+  it('resourceAppUrl builds direct app URLs for records, views, and filters', () => {
+    const resource = SAMPLE.resources[0]
+
+    assert.equal(resourceAppUrl('https://pima.io', resource, {id: 12}), 'https://pima.io/app/orders/12')
+    assert.equal(
+      resourceAppUrl('https://pima.io/', resource, {
+        variant: 'shippable',
+        q: 'priority',
+        filters: {status: 'pending'},
+      }),
+      'https://pima.io/app/orders/shippable?q=priority&filters%5Bstatus%5D=pending',
+    )
   })
 
   it('accessCell renders a compact r/c/u/d indicator', () => {

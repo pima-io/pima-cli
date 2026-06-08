@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyMemberActionAccess} from '../../lib/access.js'
 import {memberAction} from '../../lib/resource.js'
 
 export default class PoUndo extends BaseCommand {
@@ -13,16 +14,17 @@ export default class PoUndo extends BaseCommand {
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(PoUndo)
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → POST /purchase_orders/${args.id}/undo`)
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to undo receiving for purchase order ${args.id}. Re-run with --yes to confirm.`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        await verifyMemberActionAccess({host: flags.host, resource: 'purchase_orders', action: 'undo', method: 'POST'})
+        this.log(`DRY RUN → POST /purchase_orders/${args.id}/undo`)
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to undo receiving for purchase order ${args.id}. Re-run with --yes to confirm.`)
+        return
+      }
+
       const client = await this.client(flags.host)
       await memberAction(client, 'POST', 'purchase_orders', args.id, 'undo')
       this.log(`✓ Purchase order ${args.id} receipt undone.`)

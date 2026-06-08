@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyResourceAccess} from '../../lib/access.js'
 import {createResource} from '../../lib/resource.js'
 
 // Generic create — covers every catalog write (coupons, credits, invites,
@@ -23,17 +24,18 @@ export default class ResourceCreate extends BaseCommand {
     const {args, flags} = await this.parse(ResourceCreate)
     const body = {record: JSON.parse(flags.data)}
 
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → POST /${args.resource}.json`)
-      this.log(JSON.stringify(body, null, 2))
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to create a ${args.resource}. Re-run with --yes to confirm (or --dry-run to preview).`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        const resource = await verifyResourceAccess({host: flags.host, resource: args.resource, verb: 'create'})
+        this.log(`DRY RUN → POST /${resource.id}.json`)
+        this.log(JSON.stringify(body, null, 2))
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to create a ${args.resource}. Re-run with --yes to confirm (or --dry-run to preview).`)
+        return
+      }
+
       const client = await this.client(flags.host)
       const data = await createResource(client, args.resource, body)
       this.log(flags.json ? JSON.stringify(data, null, 2) : `✓ Created ${args.resource}.`)

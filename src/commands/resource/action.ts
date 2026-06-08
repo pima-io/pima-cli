@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyMemberActionAccess} from '../../lib/access.js'
 import {memberAction} from '../../lib/resource.js'
 
 // Generic escape hatch for member actions: <method> /<resource>/:id/<verb>.json
@@ -30,17 +31,24 @@ export default class ResourceAction extends BaseCommand {
     const body = flags.data ? JSON.parse(flags.data) : undefined
     const path = `/${args.resource}/${args.id}/${args.verb}`
 
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → ${method} ${path}.json`)
-      if (body) this.log(JSON.stringify(body, null, 2))
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to ${method} ${path}. Re-run with --yes to confirm (or --dry-run to preview).`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        const checked = await verifyMemberActionAccess({
+          host: flags.host,
+          resource: args.resource,
+          action: args.verb,
+          method,
+        })
+        const manifestPath = checked.action.path.replace(/\{id\}/g, args.id)
+        this.log(`DRY RUN → ${method} ${manifestPath}.json`)
+        if (body) this.log(JSON.stringify(body, null, 2))
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to ${method} ${path}. Re-run with --yes to confirm (or --dry-run to preview).`)
+        return
+      }
+
       const client = await this.client(flags.host)
       const data = await memberAction(client, method, args.resource, args.id, args.verb, body)
       this.log(flags.json ? JSON.stringify(data, null, 2) : `✓ ${args.resource}/${args.id} ${args.verb} done.`)

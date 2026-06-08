@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyResourceAccess} from '../../lib/access.js'
 import {updateResource} from '../../lib/resource.js'
 
 // Generic update — gated server-side by the resource's <domain>:write scope.
@@ -23,17 +24,18 @@ export default class ResourceUpdate extends BaseCommand {
     const {args, flags} = await this.parse(ResourceUpdate)
     const body = {record: JSON.parse(flags.data)}
 
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → PATCH /${args.resource}/${args.id}.json`)
-      this.log(JSON.stringify(body, null, 2))
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to update ${args.resource}/${args.id}. Re-run with --yes to confirm (or --dry-run to preview).`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        const resource = await verifyResourceAccess({host: flags.host, resource: args.resource, verb: 'update'})
+        this.log(`DRY RUN → PATCH /${resource.id}/${args.id}.json`)
+        this.log(JSON.stringify(body, null, 2))
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to update ${args.resource}/${args.id}. Re-run with --yes to confirm (or --dry-run to preview).`)
+        return
+      }
+
       const client = await this.client(flags.host)
       const data = await updateResource(client, args.resource, args.id, body)
       this.log(flags.json ? JSON.stringify(data, null, 2) : `✓ Updated ${args.resource}/${args.id}.`)

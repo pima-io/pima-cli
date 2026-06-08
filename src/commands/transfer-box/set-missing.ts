@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyMemberActionAccess} from '../../lib/access.js'
 import {memberAction} from '../../lib/resource.js'
 
 export default class TransferBoxSetMissing extends BaseCommand {
@@ -13,16 +14,17 @@ export default class TransferBoxSetMissing extends BaseCommand {
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(TransferBoxSetMissing)
-    if (flags['dry-run']) {
-      this.log(`DRY RUN → POST /transfer_boxes/${args.id}/set_missing`)
-      return
-    }
-    if (!flags.yes) {
-      this.log(`About to mark transfer box ${args.id} missing. Re-run with --yes to confirm.`)
-      return
-    }
-
     try {
+      if (flags['dry-run']) {
+        await verifyMemberActionAccess({host: flags.host, resource: 'transfer_boxes', action: 'set_missing', method: 'POST'})
+        this.log(`DRY RUN → POST /transfer_boxes/${args.id}/set_missing`)
+        return
+      }
+      if (!flags.yes) {
+        this.log(`About to mark transfer box ${args.id} missing. Re-run with --yes to confirm.`)
+        return
+      }
+
       const client = await this.client(flags.host)
       await memberAction(client, 'POST', 'transfer_boxes', args.id, 'set_missing')
       this.log(`✓ Transfer box ${args.id} marked missing.`)

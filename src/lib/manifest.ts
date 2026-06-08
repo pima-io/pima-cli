@@ -46,6 +46,8 @@ export interface ManifestField {
 export interface ManifestView {
   id: string
   title: string
+  path?: string
+  react_path?: string
 }
 
 export interface ManifestAction {
@@ -79,7 +81,7 @@ export interface ManifestResource {
   scopes: ManifestScopes | null
   access?: ManifestAccess
   supports?: {index?: boolean; show?: boolean; create?: boolean; update?: boolean; destroy?: boolean}
-  paths?: {index?: string; show?: string; new?: string; create?: string; update?: string; destroy?: string}
+  paths?: {index?: string; show?: string; new?: string; edit?: string; create?: string; update?: string; destroy?: string}
   search?: {fields: string[]; placeholder: string | null} | null
   filters?: ManifestFilter[]
   columns?: ManifestColumn[]

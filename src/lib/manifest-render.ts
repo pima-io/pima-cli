@@ -1,4 +1,5 @@
 import type {Manifest, ManifestResource, ManifestField, ManifestAction, ManifestAccess, ManifestFilter} from './manifest.js'
+import {resourceAppUrl} from './links.js'
 
 // Human-readable renderers for the manifest, shared by `resource describe` and
 // the live `skill resources` briefing so the two never drift.
@@ -61,7 +62,7 @@ function actionLine(a: ManifestAction): string {
 // Full human-readable detail for one resource (the `resource describe` body).
 // `gated` reflects the manifest-level flag: when true the surface (and the
 // resource's `access` block) is filtered to the caller's ability ∩ token scopes.
-export function renderResourceDetail(r: ManifestResource, gated?: boolean): string {
+export function renderResourceDetail(r: ManifestResource, gated?: boolean, host?: string): string {
   const out: string[] = []
   out.push(`${r.id}${r.title ? ` — ${r.title}` : ''}`)
   if (gated !== undefined) out.push(`manifest: ${gated ? 'gated (filtered to your access)' : 'ungated (full surface)'}`)
@@ -135,6 +136,26 @@ export function renderResourceDetail(r: ManifestResource, gated?: boolean): stri
   out.push('PATHS:')
   for (const [k, v] of Object.entries(r.paths ?? {})) {
     if (v) out.push(`  ${k}: ${v}`)
+  }
+
+  if (host) {
+    out.push('')
+    out.push('APP LINKS:')
+    const add = (label: string, fn: () => string) => {
+      try {
+        out.push(`  ${label}: ${fn()}`)
+      } catch {
+        // Unsupported path for this resource; omit it from human output.
+      }
+    }
+
+    add('index', () => resourceAppUrl(host, r))
+    add('new', () => resourceAppUrl(host, r, {action: 'new'}))
+    if (r.paths?.show) out.push(`  show: ${resourceAppUrl(host, r, {id: '{id}'})}`)
+    if (r.paths?.edit || r.paths?.show) out.push(`  edit: ${resourceAppUrl(host, r, {action: 'edit', id: '{id}'})}`)
+    for (const view of r.views ?? []) {
+      add(`view ${view.id}`, () => resourceAppUrl(host, r, {variant: view.id}))
+    }
   }
 
   return out.join('\n')

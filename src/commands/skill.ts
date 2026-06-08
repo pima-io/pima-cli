@@ -69,6 +69,9 @@ export default class Skill extends Command {
       this.log('  pima skill --all                  every skill concatenated (slurp once)')
       this.log('  pima resources                    every resource: domain, scopes, access, fields/filters/actions')
       this.log('  pima resource describe <name>     full contract for one resource (search, fields, actions, paths)')
+      this.log('  pima resource link <name> [id]    direct Pima.io URL for indexes, filters, views, and records')
+      this.log('  pima resource history <name> <id> record history from PaperTrail versions')
+      this.log('  pima resource comments <name> <id> comment thread and @-mention metadata')
       this.log('  MCP equivalents                   skill://<name> resources, the manifest://resources resource,')
       this.log('                                    and the pima_describe / pima_resources tools')
       return

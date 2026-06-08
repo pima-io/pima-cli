@@ -1,5 +1,9 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {verifyResourceAccess} from '../../lib/access.js'
+import {resolveHost} from '../../lib/config.js'
+import {resourceAppUrl} from '../../lib/links.js'
+import {parseFilterPairs} from '../../lib/params.js'
 import {showResourceExport, startResourceExport, type ResourceExport as ExportPayload} from '../../lib/resource.js'
 
 // Generic async CSV export for any React resource index. Mirrors the React UI's
@@ -39,17 +43,20 @@ export default class ResourceExport extends BaseCommand {
       legacy_path: flags['legacy-path'],
       owner_resource: flags['owner-resource'],
       owner_id: flags['owner-id'],
-      filters: parseFilters(flags.filter ?? []),
+      filters: parseFilterPairs(flags.filter ?? []),
       to_email: flags['to-email'],
     }
 
-    if (flags['dry-run']) {
-      this.log(`DRY RUN -> POST /react_ui/resources/${args.resource}/export.json`)
-      this.log(JSON.stringify(params, null, 2))
-      return
-    }
-
     try {
+      const resource = await verifyResourceAccess({host: flags.host, resource: args.resource, verb: 'read'})
+      if (flags['dry-run']) {
+        const host = await resolveHost(flags.host)
+        this.log(`DRY RUN -> POST /react_ui/resources/${resource.id}/export.json`)
+        this.log(`View URL: ${resourceAppUrl(host, resource, params)}`)
+        this.log(JSON.stringify(params, null, 2))
+        return
+      }
+
       const client = await this.client(flags.host)
       const started = await startResourceExport(client, args.resource, params)
       const result = flags.wait
@@ -71,30 +78,6 @@ export default class ResourceExport extends BaseCommand {
       this.fail(error)
     }
   }
-}
-
-function parseFilters(pairs: string[]): Record<string, string | string[]> {
-  const filters: Record<string, string | string[]> = {}
-  for (const pair of pairs) {
-    const idx = pair.indexOf('=')
-    if (idx <= 0) {
-      const err: any = new Error(`Invalid --filter "${pair}". Use key=value.`)
-      err.exitCode = 5
-      throw err
-    }
-
-    const key = pair.slice(0, idx)
-    const value = pair.slice(idx + 1)
-    const existing = filters[key]
-    if (existing === undefined) {
-      filters[key] = value
-    } else if (Array.isArray(existing)) {
-      existing.push(value)
-    } else {
-      filters[key] = [existing, value]
-    }
-  }
-  return filters
 }
 
 async function pollExport(
