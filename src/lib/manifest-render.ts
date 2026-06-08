@@ -1,4 +1,4 @@
-import type {Manifest, ManifestResource, ManifestField, ManifestAction, ManifestAccess} from './manifest.js'
+import type {Manifest, ManifestResource, ManifestField, ManifestAction, ManifestAccess, ManifestFilter} from './manifest.js'
 
 // Human-readable renderers for the manifest, shared by `resource describe` and
 // the live `skill resources` briefing so the two never drift.
@@ -34,6 +34,23 @@ function fieldLine(f: ManifestField): string {
   if (f.options_resource) tags.push(`→ ${f.options_resource}`)
   else if (f.choices?.length) tags.push(`choices: ${f.choices.map((c) => c.value).join('|')}`)
   return `  ${f.key} (${tags.join(', ')})`
+}
+
+function filterLine(f: ManifestFilter): string {
+  const detail: string[] = [f.type]
+  if (f.options_resource) detail.push(`→ ${f.options_resource}`)
+  else if (f.choices?.length) detail.push(`choices: ${f.choices.map((c) => c.value).join('|')}`)
+  if (f.views?.length) detail.push(`views: ${f.views.join('|')}`)
+  if (f.exclude_views?.length) detail.push(`except: ${f.exclude_views.join('|')}`)
+  return `  ${f.key} (${detail.join(', ')})`
+}
+
+function filterBrief(f: ManifestFilter): string {
+  const suffix: string[] = []
+  if (f.options_resource) suffix.push(`→${f.options_resource}`)
+  if (f.views?.length) suffix.push(`@${f.views.join('|')}`)
+  if (f.exclude_views?.length) suffix.push(`!${f.exclude_views.join('|')}`)
+  return `${f.key}${suffix.join('')}`
 }
 
 function actionLine(a: ManifestAction): string {
@@ -73,10 +90,7 @@ export function renderResourceDetail(r: ManifestResource, gated?: boolean): stri
   out.push('FILTERS:')
   if (r.filters?.length) {
     for (const f of r.filters) {
-      const detail: string[] = [f.type]
-      if (f.options_resource) detail.push(`→ ${f.options_resource}`)
-      else if (f.choices?.length) detail.push(`choices: ${f.choices.map((c) => c.value).join('|')}`)
-      out.push(`  ${f.key} (${detail.join(', ')})`)
+      out.push(filterLine(f))
     }
   } else {
     out.push('  (none)')
@@ -168,7 +182,7 @@ export function renderResourcesBriefing(manifest: Manifest): string {
       if (r.filters?.length) {
         out.push(
           `- filters: ${r.filters
-            .map((f) => (f.options_resource ? `${f.key}→${f.options_resource}` : f.key))
+            .map((f) => filterBrief(f))
             .join(', ')}`,
         )
       }

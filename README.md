@@ -60,6 +60,7 @@ agent—can introspect before acting:
 pima resources                  # every resource: id, domain, scopes, access (r/c/u/d), #fields/#filters/#actions
 pima resources --domain orders  # filter to one domain
 pima resource describe orders   # full contract: access, search/filters, create/update fields, actions, paths
+pima resource export customers --q Dolph  # server-side CSV export, with filters/sort/view preserved
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
 

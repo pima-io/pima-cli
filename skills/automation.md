@@ -50,6 +50,7 @@ pima resource create <name> --data '{...}' --yes       # write   (<domain>:write
 pima resource update <name> <id> --data '{...}' --yes  # write   (<domain>:write)
 pima resource delete <name> <id> --yes                 # write   (<domain>:write)
 pima resource action <name> <id> <verb> [--method]     # member action (e.g. accept)
+pima resource export <name> [--q --filter --variant]   # server-side CSV export
 ```
 
 `resource fields <name>` tells you exactly what keys `--data` expects, so you

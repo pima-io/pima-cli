@@ -21,6 +21,8 @@ const SAMPLE: Manifest = {
       filters: [
         {key: 'status', label: 'Status', type: 'select', choices: [{value: 'open', label: 'Open'}]},
         {key: 'location_id', label: 'Location', type: 'select', options_resource: 'locations'},
+        {key: 'request_status', label: 'Request Status', type: 'select', views: ['requests']},
+        {key: 'damaged', label: 'Damages', type: 'boolean', exclude_views: ['requests']},
       ],
       columns: [{key: 'number', label: 'Number', type: 'string', sortable: true}],
       fields: [
@@ -151,6 +153,8 @@ describe('manifest rendering', () => {
     assert.match(out, /fields: number, email/) // search
     assert.match(out, /status \(select, choices: open\)/) // filter w/ choices
     assert.match(out, /location_id \(select, → locations\)/) // filter w/ options_resource
+    assert.match(out, /request_status \(select, views: requests\)/) // filter scoped to a view
+    assert.match(out, /damaged \(boolean, except: requests\)/) // filter excluded from a view
     assert.match(out, /email \(string, required\)/) // create field
     assert.match(out, /id \(integer, read-only\)/) // read-only field listed separately
     assert.match(out, /cancel \[POST\|PATCH\] \/orders\/\{id\}\/cancel \[mutating\]/) // mutating action
@@ -172,7 +176,7 @@ describe('manifest rendering', () => {
     assert.match(out, /### orders/)
     assert.match(out, /access: r-u- \(r\/c\/u\/d\)/) // per-resource access cell
     assert.match(out, /search: number, email/)
-    assert.match(out, /filters: status, location_id→locations/)
+    assert.match(out, /filters: status, location_id→locations, request_status@requests, damaged!requests/)
     assert.match(out, /create fields: email\*, note/) // required marked with *
     assert.match(out, /actions: cancel!/) // mutating actions marked with !
   })

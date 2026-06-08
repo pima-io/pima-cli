@@ -20,6 +20,8 @@ export interface ManifestFilter {
   choices?: ManifestChoice[]
   options_resource?: string | null
   option_params?: Record<string, unknown> | null
+  views?: string[]
+  exclude_views?: string[]
 }
 
 export interface ManifestColumn {
