@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
   "bin": {
-    "pima": "./bin/run.js"
+    "pima": "bin/run.js"
   },
   "type": "module",
   "exports": "./dist/index.js",
@@ -17,7 +17,10 @@
     "node": ">=20"
   },
   "license": "MIT",
-  "repository": "pima-io/pima-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pima-io/pima-cli.git"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1",
     "@oclif/core": "^4",
