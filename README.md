@@ -8,9 +8,6 @@ It is a thin client over PIMA's existing JSON API. It implements **no** business
 logic — it calls the same endpoints the PIMA web app uses, sending
 `X-Pima-View: lean` so responses are domain-shaped, not UI-shaped.
 
-> Server side (OAuth provider, scopes, scope gates) lives in the private `pima`
-> repo. See its `docs/oauth_api_bridge_plan.md`.
-
 ## Install
 
 ```
@@ -20,7 +17,7 @@ npm i -g @pima-io/cli      # or: npx @pima-io/cli
 ## Quick start
 
 ```
-pima auth login --host https://your-pima-instance --read-only
+pima auth login --read-only
 pima orders list --status shippable
 pima skill getting-started
 ```
@@ -32,7 +29,7 @@ until you finish. No callback server. The token lives in your OS keychain.
 ### Headless / agents
 
 ```
-PIMA_HOST=https://your-pima-instance PIMA_TOKEN=… pima orders list --json | jq
+PIMA_TOKEN=… pima orders list --json | jq
 ```
 
 ## Skills vs. help
@@ -100,7 +97,7 @@ Example client config (read-only):
     "pima": {
       "command": "npx",
       "args": ["-y", "@pima-io/cli", "mcp"],
-      "env": { "PIMA_HOST": "https://your-pima-instance", "PIMA_TOKEN": "<token>" }
+      "env": { "PIMA_TOKEN": "<token>" }
     }
   }
 }
@@ -151,21 +148,10 @@ Commands live in `src/commands/<topic>/<cmd>.ts` (oclif). Shared transport,
 auth, output, and skills loaders are in `src/lib/`. Skills are markdown in
 `skills/`.
 
----
-
-## Status
-
-Implemented: OAuth device-flow auth, read + write commands, the generic
-resource layer (every PIMA catalog resource), manifest-based discovery, the MCP
-server, and the skills catalog. Server-side dependencies (Doorkeeper
-device-flow provider, scope gates, lean header, `/oauth/scopes`,
-`/api_manifest.json` gating) live in the private `pima` repo's
-`docs/oauth_api_bridge_plan.md`.
-
-The live surface is self-describing — run `pima skill` for the onboarding menu
-and `pima resources` / `pima resource describe <name>` for the current resource
-contract rather than relying on this README.
-
 ## License
 
 MIT.
+
+Development note: `--host` and `PIMA_HOST` are only for local or development
+PIMA instances. `https://your-pima-instance` is a placeholder, not a production
+host.
