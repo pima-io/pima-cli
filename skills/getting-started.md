@@ -3,7 +3,7 @@ name: getting-started
 description: Orientation — auth, scopes, output modes, exit codes, and the read→write safety model
 when_to_use: First time using the pima CLI, or wiring it into an agent
 scopes: []
-related: [scopes, data-model]
+related: [scopes, data-model, feedback]
 ---
 
 # Getting started with the PIMA CLI
@@ -72,3 +72,6 @@ domain-shaped data plus `can_*` permission flags.
 Run `pima skill` to list every skill. Start with `pima skill data-model` — it
 explains the one naming trap that trips up almost everyone (the model names do
 not match the labels you see in the UI).
+
+Use `pima skill feedback` to learn when to file bugs, ask questions, or request
+features from an agent session.

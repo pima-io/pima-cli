@@ -16,6 +16,7 @@ import {listSkills, loadSkill} from '../lib/skills.js'
 import {fetchManifest, findResource} from '../lib/manifest.js'
 import {resolveHost} from '../lib/config.js'
 import {resourceAppUrl} from '../lib/links.js'
+import {fileFeedback, followUpFeedback, getFeedback, type FeedbackKind, type FeedbackPayload} from '../lib/feedback.js'
 
 export interface McpOptions {
   host?: string
@@ -286,6 +287,21 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
   )
 
+  server.registerTool(
+    'pima_feedback_status',
+    {
+      description: 'Check a PIMA async feedback question thread. Requires feedback:read.',
+      inputSchema: {id: z.string().describe('Question thread id, e.g. q_123')},
+    },
+    async ({id}) => {
+      try {
+        return ok(await getFeedback(await client(), id))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
   if (!opts.write) return server
 
   // ---- Write tools (opt-in; still bounded by the token's :write scopes) ----
@@ -370,6 +386,76 @@ export function buildServer(opts: McpOptions = {}): McpServer {
       }
     },
   )
+
+  const feedbackSchema = {
+    title: z.string().describe('Short title'),
+    description: z.string().optional(),
+    expected: z.string().optional(),
+    actual: z.string().optional(),
+    steps: z.string().optional(),
+    severity: z.string().optional(),
+    request_id: z.string().optional().describe('PIMA request id, especially for 500s'),
+    status: z.union([z.string(), z.number()]).optional(),
+    command: z.string().optional(),
+    resource: z.string().optional(),
+    record_id: z.string().optional(),
+    path: z.string().optional(),
+    method: z.string().optional(),
+    url: z.string().optional(),
+    error_class: z.string().optional(),
+    error_message: z.string().optional(),
+    context: z.record(z.any()).optional().describe('Additional sanitized context. Do not include tokens, cookies, gift codes, credit codes, or raw PII.'),
+    codex_pr: z.boolean().optional().describe('Override Codex PR automation for bugs/features. Ignored by async questions.'),
+  }
+
+  const feedbackTool = (kind: FeedbackKind, description: string) => ({
+    description,
+    inputSchema: feedbackSchema,
+    handler: async (input: Omit<FeedbackPayload, 'kind'>) => {
+      try {
+        return ok(await fileFeedback(await client(), {kind, ...input}))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  })
+
+  const bugTool = feedbackTool(
+    'bug',
+    'File a PIMA bug as a GitHub issue. Use this when a PIMA API returns a 500; include request_id, command, status, resource/action, and sanitized context. Requires feedback:write.',
+  )
+  server.registerTool('pima_file_bug', {description: bugTool.description, inputSchema: bugTool.inputSchema}, bugTool.handler)
+
+  const questionTool = feedbackTool(
+    'question',
+    'Ask a PIMA product or implementation question. This queues an async read-only Codex answer thread and returns a question id. Requires feedback:write.',
+  )
+  server.registerTool('pima_ask_question', {description: questionTool.description, inputSchema: questionTool.inputSchema}, questionTool.handler)
+
+  server.registerTool(
+    'pima_feedback_follow_up',
+    {
+      description: 'Ask a follow-up on an existing PIMA feedback question thread. Requires feedback:write.',
+      inputSchema: {
+        id: z.string().describe('Question thread id, e.g. q_123'),
+        message: z.string().describe('Follow-up question'),
+        context: z.record(z.any()).optional().describe('Additional sanitized context. Do not include tokens, cookies, gift codes, credit codes, or raw PII.'),
+      },
+    },
+    async ({id, message, context}) => {
+      try {
+        return ok(await followUpFeedback(await client(), id, message, context))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  const featureTool = feedbackTool(
+    'feature',
+    'Request a PIMA feature as a GitHub issue. Features are Codex PR candidates by default. Requires feedback:write.',
+  )
+  server.registerTool('pima_request_feature', {description: featureTool.description, inputSchema: featureTool.inputSchema}, featureTool.handler)
 
   void destroyResource // available for a future pima_delete tool
 

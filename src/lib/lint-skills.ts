@@ -5,6 +5,7 @@ import {ALL_SCOPES} from './scopes.js'
 // scope, and every skill must have a description. Run via `npm run lint:skills`.
 const skills = await listSkills()
 const valid = new Set<string>(ALL_SCOPES)
+const placeholders = new Set(['<resource-domain>:read', '<resource-domain>:write'])
 let problems = 0
 
 for (const skill of skills) {
@@ -13,7 +14,7 @@ for (const skill of skills) {
     problems++
   }
   for (const scope of skill.scopes) {
-    if (!valid.has(scope)) {
+    if (!valid.has(scope) && !placeholders.has(scope)) {
       console.error(`skill "${skill.name}": unknown scope "${scope}"`)
       problems++
     }

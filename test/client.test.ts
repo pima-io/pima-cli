@@ -34,9 +34,9 @@ describe('Client', () => {
 
   it('raises ApiError on a non-2xx response', async () => {
     globalThis.fetch = (async () =>
-      new Response(JSON.stringify({error: 'nope'}), {status: 403})) as unknown as typeof fetch
+      new Response(JSON.stringify({error: 'nope', message: 'Readable API error'}), {status: 403})) as unknown as typeof fetch
 
     const client = await Client.create()
-    await assert.rejects(client.get('/x.json'), (error: any) => error.status === 403)
+    await assert.rejects(client.get('/x.json'), (error: any) => error.status === 403 && error.message === 'Readable API error')
   })
 })

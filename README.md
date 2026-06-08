@@ -46,7 +46,7 @@ pima skill order-routing --json
 
 v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
 (backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`, `versions`,
-`comments`).
+`comments`, `feedback`).
 
 ## Discoverability
 
@@ -84,7 +84,8 @@ tools (still bounded by the token).
 
 Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
 `pima_fields`, `pima_search`, `pima_routing`, `pima_report` — plus
-`pima_reroute`, `pima_create`, `pima_update`, `pima_action` with `--write`.
+`pima_reroute`, `pima_create`, `pima_update`, `pima_action`, and feedback tools
+with `--write`.
 Skills are exposed as MCP resources (`skill://data-model`, …) and the full
 surface as `manifest://resources`, so the agent introspects and reads the domain
 model before acting.
@@ -123,6 +124,7 @@ every `<domain>:read`. Live source of truth: `GET /oauth/scopes`.
 | `purchasing` | create/accept/undo POs, costs |
 | `customers` | edit customers, credits |
 | `reports` | generate reports, save layouts |
+| `feedback` | file bugs, questions, feature requests |
 | `admin` | company/location/user/role/integrations |
 
 Full taxonomy: `pima skill scopes`.

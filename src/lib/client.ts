@@ -6,7 +6,7 @@ export class ApiError extends Error {
     public status: number,
     public body: any,
   ) {
-    super(typeof body === 'string' ? body : (body?.error ?? `HTTP ${status}`))
+    super(typeof body === 'string' ? body : (body?.message ?? body?.error ?? `HTTP ${status}`))
   }
 }
 

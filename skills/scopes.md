@@ -3,7 +3,7 @@ name: scopes
 description: The OAuth scope taxonomy and how effective access is computed
 when_to_use: When deciding what scopes to request, or debugging a 403
 scopes: []
-related: [getting-started]
+related: [getting-started, feedback]
 ---
 
 # Scopes
@@ -12,7 +12,7 @@ PIMA uses GitHub-style scopes: `<domain>:<read|write>`. This skill mirrors the
 server's taxonomy; the **live** source of truth is `GET /oauth/scopes` (rendered
 by `pima skill scopes` when you're connected).
 
-## The 10 domains
+## The 11 domains
 
 | Domain | read | write adds |
 |---|---|---|
@@ -25,6 +25,7 @@ by `pima skill scopes` when you're connected).
 | `purchasing` | purchase orders, receiving status | create/accept/undo POs, edit costs |
 | `customers` | customers, addresses, tags, credits | edit customers, add/adjust credits |
 | `reports` | run/view/export reports, metrics | generate inventory reports, save layouts |
+| `feedback` | submitted agent feedback status | file bugs, ask questions, request features |
 | `admin` | company/location/user/role config | edit those + integrations, timesheets |
 
 ## Rules

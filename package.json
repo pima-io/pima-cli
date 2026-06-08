@@ -1,6 +1,6 @@
 {
   "name": "@pima-io/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
   "bin": {
     "pima": "bin/run.js"
@@ -41,7 +41,7 @@
   "scripts": {
     "build": "tsc -b",
     "dev": "./bin/dev.js",
-    "test": "node --import tsx --test test/*.test.ts",
+    "test": "sh -c 'for f in test/*.test.ts; do node --import tsx --test \"$f\" || exit $?; done'",
     "lint:skills": "node ./dist/lib/lint-skills.js",
     "prepack": "tsc -b && oclif manifest"
   },
@@ -86,6 +86,9 @@
       },
       "credit": {
         "description": "Customer store credit: add"
+      },
+      "feedback": {
+        "description": "File bugs, ask questions, and request features"
       },
       "report": {
         "description": "Reports and exports"

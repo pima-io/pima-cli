@@ -13,6 +13,7 @@ export const DOMAINS = [
   'purchasing',
   'customers',
   'reports',
+  'feedback',
   'admin',
 ] as const
 

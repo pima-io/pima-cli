@@ -94,7 +94,7 @@ describe('manifest fetch + findResource', () => {
   })
 })
 
-describe('manifest cache key (per token)', () => {
+describe('manifest cache key (per token)', {concurrency: false}, () => {
   // These exercise the real file-store. We use a throwaway host so the only
   // entries we write are `manifest:https://cache.test:*` (never a real token
   // entry, which is keyed by hostname) and we purge them in afterEach.

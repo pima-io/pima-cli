@@ -14,8 +14,8 @@ describe('scopes', () => {
     assert.ok(READ_ONLY.includes('orders:read'))
   })
 
-  it('includes transfers as its own domain', () => {
+  it('includes transfers and feedback as their own domains', () => {
     assert.ok(DOMAINS.includes('transfers'))
-    assert.equal(DOMAINS.length, 10)
+    assert.ok(DOMAINS.includes('feedback'))
   })
 })
