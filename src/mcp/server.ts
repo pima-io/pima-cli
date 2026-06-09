@@ -19,6 +19,7 @@ import {resourceAppUrl} from '../lib/links.js'
 import {fileFeedback, followUpFeedback, getFeedback, type FeedbackKind, type FeedbackPayload} from '../lib/feedback.js'
 import {productPerformance, salesSummary, teamPerformance} from '../lib/metrics.js'
 import {inventoryAvailability, inventoryFulfillmentRecommendations, inventoryRisk, inventoryTransfers} from '../lib/inventory.js'
+import {filterQuestionRecipes, loadQuestionCatalog} from '../lib/questions.js'
 
 export interface McpOptions {
   host?: string
@@ -80,6 +81,27 @@ export function buildServer(opts: McpOptions = {}): McpServer {
   )
 
   // ---- Read tools ----
+  server.registerTool(
+    'pima_question_catalog',
+    {
+      description:
+        'List example PIMA business questions and optimized command mappings. Call this before answering sales, product, team, inventory, routing, audit, or compound metric questions.',
+      inputSchema: {
+        match: z.string().optional().describe('Text to match against questions and guidance, e.g. "who sold tshirts"'),
+        category: z.string().optional().describe('Category filter, e.g. sales, product, team, inventory'),
+      },
+    },
+    async ({match, category}) => {
+      try {
+        const catalog = await loadQuestionCatalog()
+        const recipes = filterQuestionRecipes(catalog.recipes, {match, category})
+        return ok({source: catalog.source, count: recipes.length, total: catalog.recipes.length, recipes})
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
   server.registerTool(
     'pima_resources',
     {

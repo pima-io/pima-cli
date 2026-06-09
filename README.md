@@ -18,7 +18,8 @@ npm i -g @pima-io/cli      # or: npx @pima-io/cli
 
 ```
 pima auth login --read-only
-pima orders list --status shippable
+pima questions
+pima resources
 pima skill getting-started
 ```
 
@@ -35,6 +36,7 @@ PIMA_TOKEN=… pima orders list --json | jq
 ## Skills vs. help
 
 - `pima help` / `--help` → **syntax** (flags, args).
+- `pima questions` → **business Q&A mappings** (what to ask and which command to run).
 - `pima skill` → **understanding** (how a domain works, gotchas, recipes).
 
 ```
@@ -42,6 +44,8 @@ pima skill                 # list
 pima skill data-model      # full text of one skill
 pima skill --all           # everything, for an agent to slurp once
 pima skill order-routing --json
+pima questions --match "who sold tshirts"
+pima questions --category product --json
 ```
 
 v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
@@ -62,6 +66,7 @@ pima resource link orders --filter status=shippable  # browser URL for a resourc
 pima resource export customers --q Dolph  # server-side CSV export, with filters/sort/view preserved
 pima resource history order_items 12345   # PaperTrail history for a resource record
 pima resource comments products 42        # comments + @-mention metadata
+pima questions                            # example business questions + preferred commands
 pima metrics sales --today --channel pos --city "Los Angeles"
 pima metrics sales --today --channel pos --group-by location_group
 pima metrics sales --today --location-group-id 12 --group-by location_group
@@ -89,7 +94,8 @@ cache.
 
 ## Example questions
 
-Run `pima skill question-catalog` for command mappings. Useful prompts include:
+Run `pima questions` for command mappings, or `pima skill question-catalog` for
+the full markdown skill. Useful prompts include:
 
 Saved location groups use Pima's actual `LocationGroup` model. Use
 `--location-group`, `--location-group-id`, or `--location-group-ids` to select
@@ -159,8 +165,8 @@ alias for `location_group`.
 reusing your token's scopes. **Read-only by default**; `--write` exposes write
 tools (still bounded by the token).
 
-Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
-`pima_fields`, `pima_search`, `pima_routing`, `pima_sales_summary`,
+Tools: `pima_question_catalog`, `pima_resources`, `pima_describe`, `pima_list`,
+`pima_show`, `pima_fields`, `pima_search`, `pima_routing`, `pima_sales_summary`,
 `pima_product_performance`, `pima_team_performance`, `pima_inventory_availability`,
 `pima_inventory_risk`, `pima_inventory_fulfillment_recommendations`,
 `pima_inventory_transfers`, `pima_report` — plus `pima_reroute`, `pima_create`,
@@ -168,6 +174,11 @@ Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
 Skills are exposed as MCP resources (`skill://data-model`, …) and the full
 surface as `manifest://resources`, so the agent introspects and reads the domain
 model before acting.
+
+Agents should call `pima_question_catalog` before business-metric questions. It
+returns the same mappings as `pima questions --json`, including prompts like
+"who sold the most tshirts today?" and the optimized `metrics`/`inventory`
+commands to use before raw resource paging.
 
 Example client config (read-only):
 

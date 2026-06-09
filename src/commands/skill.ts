@@ -65,6 +65,7 @@ export default class Skill extends Command {
       this.log(`  ${'resources'.padEnd(width)}  ${RESOURCES_DESC}`)
 
       this.log('\nGo deeper:')
+      this.log('  pima questions                    example business questions and optimized command mappings')
       this.log('  pima skill <name>                 full text of one skill')
       this.log('  pima skill --all                  every skill concatenated (slurp once)')
       this.log('  pima resources                    every resource: domain, scopes, access, fields/filters/actions')

@@ -38,6 +38,10 @@ export default class AuthLogin extends Command {
 
     this.log(`\n✓ Logged in to ${host}`)
     this.log(`  Scopes: ${token.scopes.join(', ') || '(none granted)'}`)
+    this.log('\nAgent starting points:')
+    this.log('  pima questions             example business questions and optimized commands')
+    this.log('  pima skill getting-started first-run orientation')
+    this.log('  pima skill --all           full agent domain briefing')
     void ALL_SCOPES // referenced for completion/help generation
   }
 }
