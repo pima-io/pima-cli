@@ -4,6 +4,9 @@ export interface SalesSummaryParams {
   date?: string
   from?: string
   to?: string
+  compare?: 'previous_period' | 'previous_week' | 'previous_year' | string
+  compare_from?: string
+  compare_to?: string
   channel?: 'pos' | 'online' | 'all' | string
   location_id?: string | number
   location_ids?: Array<string | number> | string
@@ -11,17 +14,29 @@ export interface SalesSummaryParams {
   location_name?: string
   short_name?: string
   location_group?: string
+  location_group_id?: string | number
+  location_group_ids?: Array<string | number> | string
   city?: string
   state?: string
   all_pos?: boolean
   gender?: string
+  group_by?: 'location_group' | 'region' | 'location' | 'city' | 'state' | 'all' | string
+  sort?: string
+  under_plan?: boolean
+  min_sales?: string | number
+  max_upt?: string | number
   refresh?: boolean
 }
 
 export interface ProductPerformanceParams extends SalesSummaryParams {
   group_by?: 'sku' | 'product' | 'style' | 'product_line' | 'category' | 'product_type' | 'gender' | string
+  location_group_by?: 'location_group' | 'region' | 'location' | 'city' | 'state' | 'all' | string
   grain?: string
-  sort?: 'revenue' | 'net_revenue' | 'units' | 'returns' | 'return_revenue' | string
+  sort?: 'revenue' | 'net_revenue' | 'units' | 'returns' | 'return_revenue' | 'return_rate' | 'auv' | string
+  min_units?: number
+  min_revenue?: string | number
+  min_return_rate?: string | number
+  max_return_rate?: string | number
   limit?: number
 }
 
@@ -63,6 +78,11 @@ export interface TeamPerformanceParams extends SalesSummaryParams, ProductSelect
     | 'upt'
     | string
   limit?: number
+  min_sales?: string | number
+  min_net_sales?: string | number
+  max_upt?: string | number
+  min_units?: string | number
+  min_orders?: string | number
 }
 
 export interface SalesSummary {
@@ -80,7 +100,38 @@ export interface SalesSummary {
   }
   totals: Record<string, number>
   by_location: Array<{location: Record<string, unknown>; totals: Record<string, number>}>
+  group_by?: string
+  group_label?: string
+  sort?: string
+  group_count?: number
+  groups?: SalesSummaryGroup[]
+  comparison?: {
+    range: {from: string; to: string}
+    totals: Record<string, number>
+    deltas: Record<string, {current: number; previous: number; delta: number; delta_percent?: number | null}>
+  }
   generated_at: string
+}
+
+export interface LocationGroupRef {
+  id: number
+  name: string
+  short_name?: string | null
+  label: string
+  enable_combined_reporting?: boolean
+}
+
+export interface SalesSummaryGroup {
+  group: {
+    id: string | number
+    label: string
+    type: string
+    model?: 'LocationGroup' | string
+    location_group?: LocationGroupRef
+    location_ids: number[]
+    locations?: Array<Record<string, unknown>>
+  }
+  totals: Record<string, number>
 }
 
 export async function salesSummary(client: Client, params: SalesSummaryParams = {}): Promise<SalesSummary> {
@@ -92,6 +143,8 @@ export interface ProductPerformance {
   source: {model: string; refreshed?: boolean; calculated_at?: string}
   group_by: string
   group_label: string
+  location_group_by?: string
+  location_group_label?: string
   sort: string
   limit: number
   group_count: number
@@ -102,7 +155,24 @@ export interface ProductPerformance {
   location_scope: SalesSummary['location_scope']
   totals: ProductPerformanceTotals
   rows: ProductPerformanceRow[]
+  groups?: ProductPerformanceLocationGroup[]
   generated_at: string
+}
+
+export interface ProductPerformanceLocationGroup {
+  group: {
+    id: string | number
+    label: string
+    type: string
+    model?: 'LocationGroup' | string
+    location_group?: LocationGroupRef
+    location_ids: number[]
+    locations?: Array<Record<string, unknown>>
+  }
+  totals: ProductPerformanceTotals
+  group_count: number
+  limited: boolean
+  rows: ProductPerformanceRow[]
 }
 
 export interface ProductPerformanceTotals {
@@ -151,6 +221,8 @@ export interface TeamPerformanceGroup {
     id: string | number
     label: string
     type: string
+    model?: 'LocationGroup' | string
+    location_group?: LocationGroupRef
     location_ids: number[]
     locations?: Array<Record<string, unknown>>
   }
@@ -228,7 +300,12 @@ export function flatSalesSummary(summary: SalesSummary): Record<string, string |
 }
 
 export function flatProductPerformanceRows(payload: ProductPerformance): Array<Record<string, string | number>> {
-  return (payload.rows ?? []).map((row) => ({
+  const rows: Array<{locationGroup?: string; row: ProductPerformanceRow}> = payload.groups?.length
+    ? payload.groups.flatMap((group) => group.rows.map((row) => ({locationGroup: group.group.label, row})))
+    : (payload.rows ?? []).map((row) => ({row}))
+
+  return rows.map(({locationGroup, row}) => ({
+    ...(locationGroup ? {[payload.location_group_by ?? 'location_group']: locationGroup} : {}),
     rank: row.rank,
     [payload.group_by]: row.label,
     revenue: dollars(row.revenue_cents),
@@ -260,6 +337,27 @@ export function flatTeamPerformanceRows(payload: TeamPerformance): Array<Record<
       upt: row.units_per_transaction ?? 0,
     })),
   )
+}
+
+export function flatSalesSummaryGroups(summary: SalesSummary): Array<Record<string, string | number>> {
+  return (summary.groups ?? []).map((group) => {
+    const totals = group.totals ?? {}
+    return {
+      [summary.group_by ?? 'group']: group.group.label,
+      net_sales: dollars(totals.net_sales_cents),
+      sales: dollars(totals.item_revenue_cents),
+      total_revenue: dollars(totals.total_revenue_cents),
+      net_plan: dollars(totals.net_sales_plan_cents),
+      plan_attainment: percentRate(totals.net_sales_plan_attainment),
+      orders: totals.orders_count ?? 0,
+      units: totals.units_sold_count ?? 0,
+      aov: dollars(totals.average_order_value_cents),
+      upt: totals.units_per_transaction ?? 0,
+      visits: totals.visits_count ?? 0,
+      conversion_rate: percent(totals.conversion_rate),
+      sales_per_hour: dollars(totals.sales_per_hour_cents),
+    }
+  })
 }
 
 function dollars(cents: unknown): string {

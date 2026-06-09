@@ -18,7 +18,7 @@ import {resolveHost} from '../lib/config.js'
 import {resourceAppUrl} from '../lib/links.js'
 import {fileFeedback, followUpFeedback, getFeedback, type FeedbackKind, type FeedbackPayload} from '../lib/feedback.js'
 import {productPerformance, salesSummary, teamPerformance} from '../lib/metrics.js'
-import {inventoryAvailability, inventoryTransfers} from '../lib/inventory.js'
+import {inventoryAvailability, inventoryFulfillmentRecommendations, inventoryRisk, inventoryTransfers} from '../lib/inventory.js'
 
 export interface McpOptions {
   host?: string
@@ -298,16 +298,29 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         date: z.string().optional().describe('Single date, YYYY-MM-DD'),
         from: z.string().optional().describe('Start date, YYYY-MM-DD'),
         to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        compare: z.enum(['previous_period', 'previous_week', 'previous_year']).optional().describe('Comparison range'),
+        compare_from: z.string().optional().describe('Explicit comparison start date, YYYY-MM-DD'),
+        compare_to: z.string().optional().describe('Explicit comparison end date, YYYY-MM-DD'),
         channel: z.enum(['pos', 'online', 'all']).optional(),
         location_id: z.number().optional(),
         location_ids: z.string().optional().describe('Comma-separated location ids'),
         location: z.string().optional().describe('Location name, reporting name, or short name'),
         short_name: z.string().optional().describe('Location short name'),
-        location_group: z.string().optional().describe('Location group name'),
+        location_group: z.string().optional().describe('Pima LocationGroup name, short name, or id'),
+        location_group_id: z.union([z.string(), z.number()]).optional().describe('Pima LocationGroup id'),
+        location_group_ids: z.string().optional().describe('Comma-separated Pima LocationGroup ids'),
         city: z.string().optional().describe('Location city, e.g. Los Angeles'),
         state: z.string().optional().describe('US state abbreviation, e.g. CA'),
         all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
         gender: z.string().optional().describe('Optional gender filter (m, w, u)'),
+        group_by: z.enum(['location_group', 'region', 'location', 'city', 'state', 'all']).optional().describe('Group sales totals by location dimension. location_group uses the actual Pima LocationGroup model; region is a legacy alias.'),
+        sort: z
+          .enum(['net_sales', 'sales', 'total_revenue', 'plan_attainment', 'orders', 'units', 'aov', 'auv', 'upt', 'visits', 'conversion_rate', 'sales_per_hour', 'inventory_on_hand'])
+          .optional()
+          .describe('Ranking metric for grouped output'),
+        under_plan: z.boolean().optional().describe('Only include groups below net sales plan'),
+        min_sales: z.union([z.string(), z.number()]).optional().describe('Only include groups with at least this net sales amount'),
+        max_upt: z.union([z.string(), z.number()]).optional().describe('Only include groups at or below this UPT'),
         refresh: z.boolean().optional().describe('Force recalculation of stored daily metrics'),
       },
     },
@@ -334,7 +347,9 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         location_ids: z.string().optional().describe('Comma-separated location ids'),
         location: z.string().optional().describe('Location name, reporting name, or short name'),
         short_name: z.string().optional().describe('Location short name'),
-        location_group: z.string().optional().describe('Location group name'),
+        location_group: z.string().optional().describe('Pima LocationGroup name, short name, or id'),
+        location_group_id: z.union([z.string(), z.number()]).optional().describe('Pima LocationGroup id'),
+        location_group_ids: z.string().optional().describe('Comma-separated Pima LocationGroup ids'),
         city: z.string().optional().describe('Location city, e.g. Los Angeles'),
         state: z.string().optional().describe('US state abbreviation, e.g. CA'),
         all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
@@ -343,7 +358,12 @@ export function buildServer(opts: McpOptions = {}): McpServer {
           .enum(['sku', 'product', 'style', 'product_line', 'category', 'product_type', 'gender'])
           .optional()
           .describe('Breakdown grain. Use style for business Style/ProductLine.'),
-        sort: z.enum(['revenue', 'net_revenue', 'units', 'returns', 'return_revenue']).optional().describe('Ranking metric'),
+        location_group_by: z.enum(['location_group', 'region', 'location', 'city', 'state', 'all']).optional().describe('Nest product rankings under a location grouping. location_group uses the actual Pima LocationGroup model; city/state are ad-hoc dimensions.'),
+        sort: z.enum(['revenue', 'net_revenue', 'units', 'returns', 'return_revenue', 'return_rate', 'auv']).optional().describe('Ranking metric'),
+        min_units: z.number().optional().describe('Only include groups with at least this many sold units'),
+        min_revenue: z.union([z.string(), z.number()]).optional().describe('Only include groups with at least this revenue amount'),
+        min_return_rate: z.union([z.string(), z.number()]).optional().describe('Only include groups at or above this return rate'),
+        max_return_rate: z.union([z.string(), z.number()]).optional().describe('Only include groups at or below this return rate'),
         limit: z.number().optional().describe('Maximum rows to return'),
         refresh: z.boolean().optional().describe('Force recalculation of stored daily SKU metrics'),
       },
@@ -361,7 +381,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     'pima_team_performance',
     {
       description:
-        'Fetch optimized retail team-member performance by location group/region, location, city, state, or all selected locations. Supports product filters for questions like "who sold the most tshirts today?" Use this before raw orders/timesheets. Requires reports:read.',
+        'Fetch optimized retail team-member performance by Pima LocationGroup, location, city, state, or all selected locations. Supports product filters for questions like "who sold the most tshirts today?" Use this before raw orders/timesheets. Requires reports:read.',
       inputSchema: {
         date: z.string().optional().describe('Single date, YYYY-MM-DD'),
         from: z.string().optional().describe('Start date, YYYY-MM-DD'),
@@ -371,8 +391,10 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         location_ids: z.string().optional().describe('Comma-separated location ids'),
         location: z.string().optional().describe('Location name, reporting name, or short name'),
         short_name: z.string().optional().describe('Location short name'),
-        location_group: z.string().optional().describe('Location group / region name'),
-        region: z.string().optional().describe('Region / location group name'),
+        location_group: z.string().optional().describe('Pima LocationGroup name, short name, or id'),
+        location_group_id: z.union([z.string(), z.number()]).optional().describe('Pima LocationGroup id'),
+        location_group_ids: z.string().optional().describe('Comma-separated Pima LocationGroup ids'),
+        region: z.string().optional().describe('Legacy alias for a Pima LocationGroup name'),
         city: z.string().optional().describe('Location city, e.g. Los Angeles'),
         state: z.string().optional().describe('US state abbreviation, e.g. CA'),
         all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
@@ -394,12 +416,17 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         product_type: z.string().optional().describe('Product type name'),
         product_type_id: z.union([z.string(), z.number()]).optional(),
         product_type_ids: z.string().optional().describe('Comma-separated product type ids'),
-        group_by: z.enum(['location_group', 'region', 'location', 'city', 'state', 'all']).optional().describe('Outer grouping for ranked team members'),
+        group_by: z.enum(['location_group', 'region', 'location', 'city', 'state', 'all']).optional().describe('Outer grouping for ranked team members. location_group uses the actual Pima LocationGroup model; city/state are ad-hoc dimensions.'),
         sort: z
           .enum(['net_sales', 'sales', 'sold', 'returns', 'sales_per_hour', 'net_sales_per_hour', 'orders', 'units', 'hours', 'aov', 'auv', 'upt'])
           .optional()
           .describe('Ranking metric'),
         limit: z.number().optional().describe('Maximum users per group to return'),
+        min_sales: z.union([z.string(), z.number()]).optional().describe('Only include users with at least this gross sales amount'),
+        min_net_sales: z.union([z.string(), z.number()]).optional().describe('Only include users with at least this net sales amount'),
+        max_upt: z.union([z.string(), z.number()]).optional().describe('Only include users at or below this UPT'),
+        min_units: z.union([z.string(), z.number()]).optional().describe('Only include users with at least this many units'),
+        min_orders: z.union([z.string(), z.number()]).optional().describe('Only include users with at least this many orders'),
         refresh: z.boolean().optional().describe('Force recalculation of stored daily user metrics'),
       },
     },
@@ -428,7 +455,9 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     location_ids: z.string().optional().describe('Comma-separated location ids'),
     location: z.string().optional().describe('Location name, reporting name, or short name'),
     short_name: z.string().optional().describe('Location short name'),
-    location_group: z.string().optional().describe('Location group name'),
+    location_group: z.string().optional().describe('Pima LocationGroup name, short name, or id'),
+    location_group_id: z.union([z.string(), z.number()]).optional().describe('Pima LocationGroup id'),
+    location_group_ids: z.string().optional().describe('Comma-separated Pima LocationGroup ids'),
     city: z.string().optional().describe('Location city, e.g. Los Angeles'),
     state: z.string().optional().describe('US state abbreviation, e.g. CA'),
     channel: z.enum(['pos', 'online', 'all']).optional(),
@@ -469,6 +498,52 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     async (params) => {
       try {
         return ok(await inventoryTransfers(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_inventory_risk',
+    {
+      description:
+        'Fetch inventory risk by combining current transfer-aware availability with recent SKU sales velocity and days of cover. Use this for low stock, fast sellers, and best-selling SKUs that are almost out. Requires inventory:read and reports:read.',
+      inputSchema: {
+        ...inventorySelectorInputSchema,
+        date: z.string().optional().describe('Velocity end date, YYYY-MM-DD'),
+        from: z.string().optional().describe('Explicit velocity start date, YYYY-MM-DD'),
+        to: z.string().optional().describe('Explicit velocity end date, YYYY-MM-DD'),
+        recent_days: z.number().optional().describe('Recent days used for sales velocity'),
+        days_of_cover: z.union([z.string(), z.number()]).optional().describe('Days-of-cover risk threshold'),
+        low_stock: z.union([z.string(), z.number()]).optional().describe('Low-stock unit threshold'),
+        at_risk: z.boolean().optional().describe('Only include high/medium risk rows'),
+        refresh: z.boolean().optional().describe('Force recalculation of stored daily SKU metrics'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await inventoryRisk(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_inventory_fulfillment_recommendations',
+    {
+      description:
+        'Fetch fulfillment location recommendations for a SKU or order item, including sellable/projected availability and route eligibility/action metadata. Use this for "where can we fulfill this SKU from nearby?" Requires inventory:read, plus orders:read with order_item_id.',
+      inputSchema: {
+        ...inventorySelectorInputSchema,
+        order_item_id: z.union([z.string(), z.number()]).optional().describe('Order item id to evaluate for rerouting'),
+        include_zero: z.boolean().optional().describe('Include locations with no sellable units'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await inventoryFulfillmentRecommendations(await client(), params))
       } catch (error) {
         return fail(error)
       }

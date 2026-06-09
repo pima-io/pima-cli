@@ -1,6 +1,6 @@
 import {describe, it} from 'node:test'
 import assert from 'node:assert/strict'
-import {flatProductPerformanceRows, flatSalesSummary, flatTeamPerformanceRows, productPerformance, salesSummary, teamPerformance} from '../src/lib/metrics.js'
+import {flatProductPerformanceRows, flatSalesSummary, flatSalesSummaryGroups, flatTeamPerformanceRows, productPerformance, salesSummary, teamPerformance} from '../src/lib/metrics.js'
 
 describe('metrics helpers', () => {
   it('fetches sales summary with location selectors encoded as query params', async () => {
@@ -26,7 +26,12 @@ describe('metrics helpers', () => {
       channel: 'pos',
       city: 'Los Angeles',
       state: 'CA',
+      location_group_id: 12,
       all_pos: true,
+      compare: 'previous_week',
+      group_by: 'region',
+      under_plan: true,
+      min_sales: 1000,
       refresh: true,
     })
 
@@ -38,7 +43,12 @@ describe('metrics helpers', () => {
     assert.equal(qs.get('channel'), 'pos')
     assert.equal(qs.get('city'), 'Los Angeles')
     assert.equal(qs.get('state'), 'CA')
+    assert.equal(qs.get('location_group_id'), '12')
     assert.equal(qs.get('all_pos'), 'true')
+    assert.equal(qs.get('compare'), 'previous_week')
+    assert.equal(qs.get('group_by'), 'region')
+    assert.equal(qs.get('under_plan'), 'true')
+    assert.equal(qs.get('min_sales'), '1000')
     assert.equal(qs.get('refresh'), 'true')
   })
 
@@ -82,6 +92,45 @@ describe('metrics helpers', () => {
     assert.equal(flat.upt, 2)
   })
 
+  it('flattens grouped sales summary rows for human output', () => {
+    const rows = flatSalesSummaryGroups({
+      metric: 'sales_summary',
+      group_by: 'city',
+      group_label: 'City',
+      sort: 'net_sales',
+      range: {from: '2026-06-08', to: '2026-06-08'},
+      channel: 'pos',
+      location_scope: {label: 'All POS locations', selector: {}, location_ids: [], matches: [], warnings: []},
+      totals: {},
+      by_location: [],
+      groups: [
+        {
+          group: {id: 'la', label: 'Los Angeles', type: 'city', location_ids: [1]},
+          totals: {
+            item_revenue_cents: 12_345,
+            net_sales_cents: 12_000,
+            total_revenue_cents: 12_000,
+            net_sales_plan_cents: 10_000,
+            net_sales_plan_attainment: 1.2,
+            orders_count: 4,
+            units_sold_count: 8,
+            average_order_value_cents: 3000,
+            units_per_transaction: 2,
+            visits_count: 40,
+            conversion_rate: 10,
+            sales_per_hour_cents: 4000,
+          },
+        },
+      ],
+      source: {model: 'DailyPerformanceMetric'},
+      generated_at: '2026-06-08T00:00:00Z',
+    })
+
+    assert.equal(rows[0].city, 'Los Angeles')
+    assert.equal(rows[0].net_sales, '$120.00')
+    assert.equal(rows[0].plan_attainment, '120.00%')
+  })
+
   it('fetches product performance with style selectors encoded as query params', async () => {
     const calls: string[] = []
     const client = {
@@ -90,8 +139,10 @@ describe('metrics helpers', () => {
         return {
           metric: 'product_performance',
           group_by: 'style',
+          location_group_by: 'city',
+          location_group_label: 'City',
           group_label: 'Style',
-          sort: 'units',
+          sort: 'return_rate',
           limit: 10,
           group_count: 0,
           limited: false,
@@ -100,6 +151,7 @@ describe('metrics helpers', () => {
           location_scope: {label: 'Selected locations', selector: {}, location_ids: [1, 2], matches: [], warnings: []},
           totals: {},
           rows: [],
+          groups: [],
           source: {model: 'DailySkuPerformanceMetric'},
           generated_at: '2026-06-08T00:00:00Z',
         }
@@ -109,9 +161,13 @@ describe('metrics helpers', () => {
     await productPerformance(client, {
       date: '2026-06-06',
       location_ids: '1,2',
+      location_group_ids: '12,13',
       channel: 'pos',
       group_by: 'style',
-      sort: 'units',
+      location_group_by: 'city',
+      sort: 'return_rate',
+      min_units: 10,
+      min_return_rate: 0.2,
       limit: 10,
       refresh: true,
     })
@@ -122,9 +178,13 @@ describe('metrics helpers', () => {
     assert.equal(path, '/api_metrics/product_performance.json')
     assert.equal(qs.get('date'), '2026-06-06')
     assert.equal(qs.get('location_ids'), '1,2')
+    assert.equal(qs.get('location_group_ids'), '12,13')
     assert.equal(qs.get('channel'), 'pos')
     assert.equal(qs.get('group_by'), 'style')
-    assert.equal(qs.get('sort'), 'units')
+    assert.equal(qs.get('location_group_by'), 'city')
+    assert.equal(qs.get('sort'), 'return_rate')
+    assert.equal(qs.get('min_units'), '10')
+    assert.equal(qs.get('min_return_rate'), '0.2')
     assert.equal(qs.get('limit'), '10')
     assert.equal(qs.get('refresh'), 'true')
   })
@@ -134,6 +194,8 @@ describe('metrics helpers', () => {
       metric: 'product_performance',
       group_by: 'style',
       group_label: 'Style',
+      location_group_by: 'city',
+      location_group_label: 'City',
       sort: 'revenue',
       limit: 25,
       group_count: 1,
@@ -168,10 +230,44 @@ describe('metrics helpers', () => {
           entity: {name: 'pima tee'},
         },
       ],
+      groups: [
+        {
+          group: {id: 'la', label: 'Los Angeles', type: 'city', location_ids: [1]},
+          totals: {
+            revenue_cents: 12_345,
+            return_revenue_cents: 345,
+            net_revenue_cents: 12_000,
+            units_sold_count: 3,
+            returned_units_count: 1,
+            return_rate_denominator_count: 4,
+            return_rate: 0.25,
+            average_unit_revenue_cents: 4115,
+          },
+          group_count: 1,
+          limited: false,
+          rows: [
+            {
+              rank: 1,
+              id: 42,
+              label: 'pima tee',
+              group_type: 'product_line',
+              revenue_cents: 12_345,
+              return_revenue_cents: 345,
+              net_revenue_cents: 12_000,
+              units_sold_count: 3,
+              returned_units_count: 1,
+              return_rate_denominator_count: 4,
+              return_rate: 0.25,
+              average_unit_revenue_cents: 4115,
+            },
+          ],
+        },
+      ],
       source: {model: 'DailySkuPerformanceMetric'},
       generated_at: '2026-06-08T00:00:00Z',
     })
 
+    assert.equal(rows[0].city, 'Los Angeles')
     assert.equal(rows[0].style, 'pima tee')
     assert.equal(rows[0].revenue, '$123.45')
     assert.equal(rows[0].net_revenue, '$120.00')
@@ -212,10 +308,13 @@ describe('metrics helpers', () => {
       sort: 'sales_per_hour',
       limit: 3,
       city: 'Los Angeles',
+      location_group_id: 12,
       channel: 'pos',
       q: 'tshirts',
       category: 'Tees',
       product_line_id: 42,
+      min_sales: 1000,
+      max_upt: 1.5,
       refresh: true,
     })
 
@@ -228,10 +327,13 @@ describe('metrics helpers', () => {
     assert.equal(qs.get('sort'), 'sales_per_hour')
     assert.equal(qs.get('limit'), '3')
     assert.equal(qs.get('city'), 'Los Angeles')
+    assert.equal(qs.get('location_group_id'), '12')
     assert.equal(qs.get('channel'), 'pos')
     assert.equal(qs.get('q'), 'tshirts')
     assert.equal(qs.get('category'), 'Tees')
     assert.equal(qs.get('product_line_id'), '42')
+    assert.equal(qs.get('min_sales'), '1000')
+    assert.equal(qs.get('max_upt'), '1.5')
     assert.equal(qs.get('refresh'), 'true')
   })
 

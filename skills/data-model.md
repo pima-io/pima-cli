@@ -63,6 +63,11 @@ include non-sellable statuses.
 
 - When a user says "Style," they almost always mean a `ProductLine`. Confirm if
   ambiguous.
+- When a user says "LocationGroup" or asks for a saved location group, use the
+  actual Pima `LocationGroup` model via `--location-group`,
+  `--location-group-id`, or `--location-group-ids`. Use `city`, `state`,
+  `location`, or `all` for ad-hoc location rollups. `region` is a legacy alias
+  for `location_group`, not a separate `Location` column.
 - For top-selling styles by date/store, use
   `pima metrics products --group-by style`; it groups
   `DailySkuPerformanceMetric` by `product_line_id`.

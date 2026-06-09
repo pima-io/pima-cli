@@ -38,6 +38,17 @@ transfer created → boxes packed → shipped → received (accepted) at destina
 Don't confuse a transfer (location→location) with rerouting an order item
 (which reassigns *responsibility*, not physical stock).
 
+For "where can this SKU/order item be fulfilled from?", use:
+
+```sh
+pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
+pima inventory fulfillment --order-item-id 12345 --all-pos --json
+```
+
+The JSON payload includes sellable/projected availability, whether the current
+token's user may route to each location, and a route action body for order-item
+contexts.
+
 ## POS vs. the API
 
 POS fulfillment actions run inside a clocked-in POS session and aren't reachable

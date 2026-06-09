@@ -18,6 +18,8 @@ export interface InventorySelectorParams {
   location_name?: string
   short_name?: string
   location_group?: string
+  location_group_id?: string | number
+  location_group_ids?: string
   city?: string
   state?: string
   channel?: 'pos' | 'online' | 'all' | string
@@ -29,10 +31,29 @@ export interface InventoryAvailabilityParams extends InventorySelectorParams {
   include_zero?: boolean
 }
 
+export interface InventoryRiskParams extends InventorySelectorParams {
+  date?: string
+  from?: string
+  to?: string
+  recent_days?: number
+  days_of_cover?: string | number
+  days_of_cover_threshold?: string | number
+  low_stock?: string | number
+  low_stock_threshold?: string | number
+  at_risk?: boolean
+  refresh?: boolean
+}
+
 export interface InventoryTransfersParams extends InventorySelectorParams {
   direction?: 'inbound' | 'outbound' | 'both' | string
   status?: string
   statuses?: string
+}
+
+export interface InventoryFulfillmentParams extends InventorySelectorParams {
+  order_item_id?: string | number
+  item_id?: string | number
+  include_zero?: boolean
 }
 
 export interface InventoryColumn {
@@ -93,12 +114,46 @@ export type InventoryTransferRow = Record<string, unknown> & {
 export type InventoryAvailability = InventoryPayload<InventoryAvailabilityRow>
 export type InventoryTransfers = InventoryPayload<InventoryTransferRow>
 
+export type InventoryRiskRow = InventoryAvailabilityRow & {
+  risk_level: string
+  recent_units_sold: number
+  recent_revenue_cents: number
+  avg_daily_units_sold: number
+  days_of_cover?: number | null
+}
+
+export type InventoryFulfillmentRecommendationRow = InventoryAvailabilityRow & {
+  recommendation: string
+  route_allowed: boolean
+  route_action?: Record<string, unknown>
+}
+
+export type InventoryRisk = InventoryPayload<InventoryRiskRow> & {
+  range: {from: string; to: string}
+  source: Record<string, string>
+}
+
+export type InventoryFulfillmentRecommendations = InventoryPayload<InventoryFulfillmentRecommendationRow> & {
+  order_item?: Record<string, unknown> | null
+}
+
 export async function inventoryAvailability(client: Client, params: InventoryAvailabilityParams = {}): Promise<InventoryAvailability> {
   return client.get(`/api_inventory/availability.json?${queryString(params)}`)
 }
 
 export async function inventoryTransfers(client: Client, params: InventoryTransfersParams = {}): Promise<InventoryTransfers> {
   return client.get(`/api_inventory/transfers.json?${queryString(params)}`)
+}
+
+export async function inventoryRisk(client: Client, params: InventoryRiskParams = {}): Promise<InventoryRisk> {
+  return client.get(`/api_inventory/risk.json?${queryString(params)}`)
+}
+
+export async function inventoryFulfillmentRecommendations(
+  client: Client,
+  params: InventoryFulfillmentParams = {},
+): Promise<InventoryFulfillmentRecommendations> {
+  return client.get(`/api_inventory/fulfillment_recommendations.json?${queryString(params)}`)
 }
 
 function queryString(params: object): string {

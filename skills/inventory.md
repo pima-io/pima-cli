@@ -40,10 +40,19 @@ each store/warehouse.
 - `pima inventory availability` is the first choice for on-hand, available,
   sellable, inbound transfer, and projected availability questions. It resolves
   SKUs by SKU/UPC/product/category/gender and resolves locations by id, name,
-  short name, location group, city, state, channel, or `--all-pos`.
+  short name, Pima `LocationGroup` (`--location-group`,
+  `--location-group-id`, `--location-group-ids`), city, state, channel, or
+  `--all-pos`.
 - `pima inventory transfers` is the first choice for "what is transferring",
   inbound/outbound transfer, and pending transfer questions. It groups rows by
   transfer and SKU and includes React UI drill-down links in `--json`.
+- `pima inventory risk` is the first choice for "fast sellers that are low on
+  stock", "best-selling SKUs almost out", and days-of-cover questions. It
+  combines current sellable/projected availability with recent SKU sales
+  velocity. Use `--at-risk` to return only high/medium risk rows.
+- `pima inventory fulfillment` is the first choice for "where can this SKU be
+  fulfilled from?" It ranks locations by sellable/projected stock and includes
+  route eligibility plus route-action metadata for order items in `--json`.
 - `pima sku show <id>` returns a SKU's detail including its per-location
   inventory.
 - `pima resource list units --q <SKU>` lists units (filterable).
@@ -73,6 +82,8 @@ Examples:
 pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory availability --product "Field Spec" --city "Los Angeles" --channel pos
 pima inventory availability --category Shirts --state CA --all-pos --json
+pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
+pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound --status transfering
 ```
 

@@ -45,8 +45,8 @@ pima skill order-routing --json
 ```
 
 v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
-(backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`, `versions`,
-`comments`, `feedback`).
+(backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`,
+`question-catalog`, `versions`, `comments`, `feedback`).
 
 ## Discoverability
 
@@ -63,10 +63,15 @@ pima resource export customers --q Dolph  # server-side CSV export, with filters
 pima resource history order_items 12345   # PaperTrail history for a resource record
 pima resource comments products 42        # comments + @-mention metadata
 pima metrics sales --today --channel pos --city "Los Angeles"
+pima metrics sales --today --channel pos --group-by location_group
+pima metrics sales --today --location-group-id 12 --group-by location_group
 pima metrics products --date 2026-06-06 --location-ids 12,34 --group-by style
-pima metrics team --today --group-by region --limit 3
+pima metrics products --today --group-by product_type --location-group-by city
+pima metrics team --today --group-by location_group --limit 3
 pima metrics team --today --q tshirts --sort units --group-by all
 pima inventory availability --sku BMSKUJY3 --short-name POS
+pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
+pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
@@ -82,6 +87,72 @@ live create form. Over MCP this is `pima_resources` / `pima_describe` plus the
 `manifest://resources` resource. Add `--refresh` to any of these to bypass the
 cache.
 
+## Example questions
+
+Run `pima skill question-catalog` for command mappings. Useful prompts include:
+
+Saved location groups use Pima's actual `LocationGroup` model. Use
+`--location-group`, `--location-group-id`, or `--location-group-ids` to select
+those records, and `--group-by location_group` / `--location-group-by
+location_group` to group by them. Use `--city`, `--state`, or `--group-by
+city|state|location` for ad-hoc geographic rollups. `region` remains a legacy
+alias for `location_group`.
+
+**Sales / Store Health**
+
+- "How are POS sales today by saved LocationGroup?"
+- "Which California stores are underperforming today?"
+- "Compare Los Angeles POS sales this week vs last week."
+- "Which stores have the highest AOV today?"
+- "Which store has the best sales per labor hour this week?"
+- "Show me POS sales for SoHo and Nashville last Saturday."
+
+**Product Performance**
+
+- "What were the top selling styles in LA last Saturday?"
+- "What SKUs drove the most revenue today?"
+- "Which categories are returning the most this month?"
+- "What are the top women's styles in California this week?"
+- "What product types are selling best by city?"
+- "Which SKU has the highest return rate in the last 30 days?"
+
+**Team Performance**
+
+- "Who were the top performing team members in each LocationGroup today?"
+- "Who sold the most tshirts today?"
+- "Who had the highest sales per hour this week?"
+- "Who sold the most women's products in LA?"
+- "Rank team members by units sold in Nashville last Saturday."
+- "Which team members have high sales but low UPT?"
+
+**Inventory**
+
+- "How many white pima tees are on hand in SoHo?"
+- "What tshirts are available in Los Angeles stores?"
+- "Which stores are low on best-selling SKUs?"
+- "What inventory is transferring into Nashville?"
+- "Which SKUs are oversold or have negative sellable counts?"
+- "Where can we fulfill this SKU from nearby?"
+
+**Ops / Order Routing**
+
+- "What shippable orders are blocked right now?"
+- "Which unshippable items can be rerouted to another store?"
+- "Show me the routing issues for SoHo."
+- "Find orders stuck because inventory is pending transfer."
+
+**Audit / Collaboration**
+
+- "What changed on order item 12345?"
+- "Show comments and @mentions on product 42."
+- "Create a direct Pima link for the POS orders view filtered to today."
+- "Export customers matching Dolph."
+- "File feedback that the metrics endpoint should support sell-through by SKU."
+
+**Compound**
+
+- "Who sold the most tshirts today, broken down by LocationGroup, and are those stores low on those tshirts?"
+
 ## MCP server (conversational agents)
 
 `pima mcp` runs an MCP server over stdio so Claude/Codex can drive PIMA in chat,
@@ -91,9 +162,9 @@ tools (still bounded by the token).
 Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
 `pima_fields`, `pima_search`, `pima_routing`, `pima_sales_summary`,
 `pima_product_performance`, `pima_team_performance`, `pima_inventory_availability`,
-`pima_inventory_transfers`, `pima_report` — plus `pima_reroute`,
-`pima_create`, `pima_update`, `pima_action`, and feedback tools with
-`--write`.
+`pima_inventory_risk`, `pima_inventory_fulfillment_recommendations`,
+`pima_inventory_transfers`, `pima_report` — plus `pima_reroute`, `pima_create`,
+`pima_update`, `pima_action`, and feedback tools with `--write`.
 Skills are exposed as MCP resources (`skill://data-model`, …) and the full
 surface as `manifest://resources`, so the agent introspects and reads the domain
 model before acting.

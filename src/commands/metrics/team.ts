@@ -3,12 +3,13 @@ import {BaseCommand} from '../../lib/base.js'
 import {flatTeamPerformanceRows, teamPerformance, type TeamPerformanceParams} from '../../lib/metrics.js'
 
 export default class MetricsTeam extends BaseCommand {
-  static description = 'Fetch optimized retail team performance metrics by region, location, city, or state. Requires scope: reports:read.'
+  static description = 'Fetch optimized retail team performance metrics by LocationGroup, location, city, or state. Requires scope: reports:read.'
   static examples = [
-    '<%= config.bin %> metrics team --today --group-by region --limit 3',
+    '<%= config.bin %> metrics team --today --group-by location_group --limit 3',
     '<%= config.bin %> metrics team --today --q tshirts --sort units --group-by all',
+    '<%= config.bin %> metrics team --today --min-sales 1000 --max-upt 1.5 --group-by all',
     '<%= config.bin %> metrics team --date 2026-06-06 --group-by city --sort sales_per_hour',
-    '<%= config.bin %> metrics team --from 2026-06-01 --to 2026-06-08 --location-group "West Coast" --group-by location',
+    '<%= config.bin %> metrics team --from 2026-06-01 --to 2026-06-08 --location-group-id 12 --group-by location',
   ]
 
   static flags = {
@@ -21,8 +22,10 @@ export default class MetricsTeam extends BaseCommand {
     'location-ids': Flags.string({description: 'Comma-separated location ids'}),
     location: Flags.string({description: 'Location name, reporting name, or short name'}),
     'short-name': Flags.string({description: 'Location short name'}),
-    'location-group': Flags.string({description: 'Location group / region name'}),
-    region: Flags.string({description: 'Region / location group name'}),
+    'location-group': Flags.string({description: 'Pima LocationGroup name, short name, or id'}),
+    'location-group-id': Flags.string({description: 'Pima LocationGroup id'}),
+    'location-group-ids': Flags.string({description: 'Comma-separated Pima LocationGroup ids'}),
+    region: Flags.string({description: 'Legacy alias for a Pima LocationGroup name'}),
     city: Flags.string({description: 'Location city'}),
     state: Flags.string({description: 'Location state abbreviation'}),
     'all-pos': Flags.boolean({description: 'Restrict to all POS locations'}),
@@ -47,7 +50,7 @@ export default class MetricsTeam extends BaseCommand {
     'group-by': Flags.string({
       options: ['location_group', 'region', 'location', 'city', 'state', 'all'],
       default: 'location_group',
-      description: 'Outer grouping for ranked team members',
+      description: 'Outer grouping for ranked team members. location_group uses Pima LocationGroup; city/state/location are ad-hoc dimensions.',
     }),
     sort: Flags.string({
       options: [
@@ -68,6 +71,11 @@ export default class MetricsTeam extends BaseCommand {
       description: 'Ranking metric',
     }),
     limit: Flags.integer({description: 'Maximum users per group to return, up to the server limit'}),
+    'min-sales': Flags.string({description: 'Only include users with at least this gross sales amount'}),
+    'min-net-sales': Flags.string({description: 'Only include users with at least this net sales amount'}),
+    'max-upt': Flags.string({description: 'Only include users at or below this UPT'}),
+    'min-units': Flags.string({description: 'Only include users with at least this many units'}),
+    'min-orders': Flags.string({description: 'Only include users with at least this many orders'}),
     refresh: Flags.boolean({description: 'Force recalculation of stored daily user metrics'}),
   }
 
@@ -100,6 +108,8 @@ function paramsFromFlags(flags: Record<string, any>, date?: string): TeamPerform
     location: flags.location,
     short_name: flags['short-name'],
     location_group: flags['location-group'],
+    location_group_id: flags['location-group-id'],
+    location_group_ids: flags['location-group-ids'],
     region: flags.region,
     city: flags.city,
     state: flags.state,
@@ -125,6 +135,11 @@ function paramsFromFlags(flags: Record<string, any>, date?: string): TeamPerform
     group_by: flags['group-by'],
     sort: flags.sort,
     limit: flags.limit,
+    min_sales: flags['min-sales'],
+    min_net_sales: flags['min-net-sales'],
+    max_upt: flags['max-upt'],
+    min_units: flags['min-units'],
+    min_orders: flags['min-orders'],
     refresh: flags.refresh,
   }
 }
@@ -152,7 +167,7 @@ function groupLabel(groupBy: string): string {
   switch (groupBy) {
     case 'location_group':
     case 'region':
-      return 'Region'
+      return 'Location Group'
     case 'location':
       return 'Location'
     case 'city':

@@ -3,12 +3,13 @@ name: recipes
 description: End-to-end command sequences for common multi-step tasks
 when_to_use: When you want a worked example chaining several commands
 scopes: []
-related: [getting-started, order-routing, inventory]
+related: [getting-started, question-catalog, order-routing, inventory]
 ---
 
 # Recipes
 
 Copy-pasteable sequences. All read commands accept `--json` for piping to `jq`.
+For natural-language prompt ideas, read `pima skill question-catalog`.
 
 ## Inspect then reroute an unshippable order item
 
@@ -82,32 +83,47 @@ pima resource create invites --data '{"email":"new.hire@example.com","role":"ass
 ```sh
 pima metrics sales --today --channel pos --json | jq '.'
 pima metrics sales --today --channel pos --city "Los Angeles"
+pima metrics sales --today --channel pos --group-by location_group
+pima metrics sales --today --location-group-id 12 --group-by location_group
+pima metrics sales --from 2026-06-01 --to 2026-06-08 --channel pos --compare previous_week
 pima metrics sales --from 2026-05-01 --to 2026-05-31 --channel pos --state CA
 pima metrics products --date 2026-06-06 --location-ids 12,34 --group-by style --json | jq '.rows'
 pima metrics products --today --channel pos --city "Los Angeles" --group-by sku --limit 20
-pima metrics team --today --group-by region --limit 3 --json | jq '.groups'
+pima metrics products --today --group-by product_type --location-group-by city
+pima metrics products --from 2026-05-01 --to 2026-05-31 --sort return_rate --min-units 10
+pima metrics team --today --group-by location_group --limit 3 --json | jq '.groups'
 pima metrics team --date 2026-06-06 --group-by city --sort sales_per_hour
 pima metrics team --today --q tshirts --sort units --group-by all
+pima metrics team --today --min-sales 1000 --max-upt 1.5 --group-by all
 ```
 
-Use `metrics sales` for totals like POS sales, orders, units, AOV, UPT, and
-location/state/city/group rollups. It uses server-side stored daily metrics;
-do not page through raw orders to calculate these totals.
+Use `metrics sales` for totals like POS sales, orders, units, AOV, UPT,
+plan attainment, and location/state/city/group rollups. It supports
+`--group-by`, `--compare previous_week|previous_period|previous_year`,
+`--under-plan`, `--min-sales`, and `--max-upt`. It uses server-side stored
+daily metrics; do not page through raw orders to calculate these totals.
 
 Use `metrics products` for top-selling SKUs, products, business Styles, product
-types, categories, and gender splits by date/store/location group. For PIMA
-business language, **Style** means `ProductLine`; request
-`--group-by style`. Do not reconstruct dated style sales from raw `units`:
-sold units do not carry the sale date needed for this question.
+types, categories, and gender splits by date/store/LocationGroup. For PIMA
+business language, **Style** means `ProductLine`; request `--group-by style`.
+Use `--location-group-by location_group` to group by Pima's actual
+`LocationGroup` model, or `--location-group-by city|state|location|all` for
+ad-hoc location dimensions. For return-rate questions, use `--sort return_rate`
+with `--min-units` to avoid tiny denominators. Do not reconstruct dated style
+sales from raw `units`: sold units do not carry the sale date needed for this
+question.
 
 Use `metrics team` for Retail Report v2 style team-member performance: top
-team members by region/location group, location, city, state, or all selected
-locations. The default grouping is `location_group`; `region` is an alias.
-Default ranking is `net_sales`, with `sales_per_hour`, `orders`, `units`, `aov`,
-`auv`, and `upt` available. For product-specific questions like "who sold the
-most tshirts today?", pass product filters (`--q`, `--sku`, `--product`,
-`--style`, `--category`, `--product-type`) and usually rank with `--sort units`
-or `--sort sales`. Do not page raw orders/timesheets for this.
+team members by saved LocationGroup, location, city, state, or all selected
+locations. The default grouping is `location_group`, backed by the actual Pima
+`LocationGroup` model; `region` is only a legacy alias. Use
+`--location-group`, `--location-group-id`, or `--location-group-ids` to select
+saved groups before grouping/ranking. Default ranking is `net_sales`, with
+`sales_per_hour`, `orders`, `units`, `aov`, `auv`, and `upt` available. For
+product-specific questions like "who sold the most tshirts today?", pass
+product filters (`--q`, `--sku`, `--product`, `--style`, `--category`,
+`--product-type`) and usually rank with `--sort units` or `--sort sales`. Do
+not page raw orders/timesheets for this.
 
 ## Answer on-hand and transferring inventory questions
 
@@ -115,13 +131,25 @@ or `--sort sales`. Do not page raw orders/timesheets for this.
 pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory availability --product "Field Spec" --city "Los Angeles" --channel pos
 pima inventory availability --category Shirts --state CA --all-pos --json | jq '.summary'
+pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
+pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound --status transfering
 ```
 
 Use `inventory availability` before raw `units` for available, sellable,
 on-hand, inbound transfer, and projected-availability questions. Use
 `inventory transfers` when the user asks what is currently transferring or
-where pending transfer units are moving.
+where pending transfer units are moving. Use `inventory risk` when the user
+asks which fast sellers are low on stock; it combines recent sales velocity
+with sellable/projected availability and days of cover. Use
+`inventory fulfillment` when the user asks where a SKU/order item can be
+fulfilled from; it includes route eligibility and route-action metadata in
+`--json`.
+
+For compound questions like "Who sold the most tshirts today, broken down by
+LocationGroup, and are those stores low on those tshirts?", first run
+`pima metrics team --today --q tshirts --sort units --group-by location_group`, then
+check stock with `pima inventory risk --q tshirts --all-pos --at-risk`.
 
 ## Pull a report payload
 
