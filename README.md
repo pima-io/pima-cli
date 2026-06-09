@@ -14,6 +14,12 @@ logic — it calls the same endpoints the PIMA web app uses, sending
 npm i -g @pima-io/cli      # or: npx @pima-io/cli
 ```
 
+Update an existing global install:
+
+```
+pima update
+```
+
 ## Quick start
 
 ```

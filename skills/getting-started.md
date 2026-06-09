@@ -28,6 +28,15 @@ is stored in your OS keychain, keyed by host.
   exactly those scopes; you still approve them on the consent screen.
 - `pima auth status` shows who you are and what scopes you hold.
 
+## Update the CLI
+
+```
+pima update
+```
+
+This installs the latest published `@pima-io/cli` from npm using the same global
+npm package name as the install command.
+
 ## Headless / agent use
 
 Set `PIMA_TOKEN` (a personal access token) and `PIMA_HOST` to skip the browser
