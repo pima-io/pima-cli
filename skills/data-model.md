@@ -75,5 +75,6 @@ include non-sellable statuses.
   `pima metrics team --q tshirts --sort units --group-by all`. Product filters
   search SKU, product, business Style/ProductLine, category, and product type;
   `tshirt`, `tshirts`, `tee`, and `tees` are treated as related terms.
-- `pima sku show <name>` resolves a SKU by its uppercase name.
+- `pima resource list skus --q <term>` searches SKUs. `pima sku show
+  <id-or-name>` is for an exact SKU detail lookup after you know the identifier.
 - Inventory questions should specify a location — most counts are per-location.

@@ -266,7 +266,8 @@ export function buildServer(opts: McpOptions = {}): McpServer {
   server.registerTool(
     'pima_search',
     {
-      description: 'Sitewide search across PIMA (orders, products, SKUs, customers). Requires reports:read.',
+      description:
+        'Sitewide lookup across PIMA pages and records (orders, products, SKUs, customers). Use optimized metrics/inventory tools for business questions. Requires reports:read.',
       inputSchema: {query: z.string()},
     },
     async ({query}) => {
@@ -298,7 +299,8 @@ export function buildServer(opts: McpOptions = {}): McpServer {
   server.registerTool(
     'pima_report',
     {
-      description: 'Fetch a report as JSON, e.g. sales_report, inventory_on_hand_report. Requires reports:read.',
+      description:
+        'Fetch a legacy report payload as JSON, e.g. inventory_on_hand_report. For sales metrics, use pima_sales_summary instead of sales_report. Requires reports:read.',
       inputSchema: {name: z.string(), params: z.record(z.string()).optional()},
     },
     async ({name, params}) => {

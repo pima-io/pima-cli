@@ -18,7 +18,7 @@ For natural-language prompt ideas, read `pima skill question-catalog`.
 pima order-item routing --location 7 --json | jq '.'
 
 # 2. Confirm the destination actually has stock for that SKU:
-pima sku show 8842 --json | jq '.record.inventory'
+pima inventory availability --sku BMSKUJY3 --location 9 --json | jq '.rows'
 
 # 3. Reroute (preview first, then commit):
 pima order-item reroute 12345 --to 9 --dry-run
@@ -30,6 +30,10 @@ pima order-item reroute 12345 --to 9 --yes
 ```sh
 pima search "BMTSW001" --json | jq '.'
 ```
+
+Use `search` for quick page/record lookup. For sales, product, team, inventory,
+or fulfillment questions, prefer `pima questions` and the optimized `metrics`
+or `inventory` commands first.
 
 ## Receive a purchase order safely
 

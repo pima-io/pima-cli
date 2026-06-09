@@ -66,15 +66,15 @@ don't have to guess. `--data` is the record's fields (the CLI wraps them as
 | Process a return | `resource create order_returns --data '{...}'` | `orders:write` |
 | Issue store credit | `credit add --customer <id> --amount <n>` | `customers:write` |
 | Look up a customer + credit balance | `customer show <id>` | `customers:read` |
-| See on-hand for a SKU (by location) | `sku show <id>` | `products:read` |
+| See on-hand for a SKU (by location) | `inventory availability --sku <sku>` | `inventory:read` |
 | List units (inventory) | `resource list units --q <SKU>` | `inventory:read` |
 | Adjust inventory | `resource create inventory_audits --data '{...}'` (+ audit skus) | `inventory:write` |
 | Plan / start a cycle count | `resource create cycle_counts --data '{"location_id":7}'` | `inventory:write` |
 | Receive / undo a purchase order | `po accept <id>` / `po undo <id>` | `purchasing:write` |
 | Reconcile a transfer box | `transfer-box set-missing/set-found <id>` | `transfers:write` |
 | Create a coupon / markdown | `resource create coupons --data '{...}'` / `bulk_price_changes` | `pricing:write` |
-| Run a report | `report get <name> [--param k=v]` | `reports:read` |
-| Search everything | `search "<query>"` | `reports:read` |
+| Fetch a legacy report payload | `report get <name> [--param k=v]` | `reports:read` |
+| Search pages and records | `search "<query>"` | `reports:read` |
 | Invite a teammate | `resource create invites --data '{...}'` | `admin:write` |
 | Push a memo / SOP | `resource create memo_assignments --data '{...}'` | `admin:write` |
 | Read timesheets / clocks | `resource list timesheets` / `clocks` | `admin:read` |

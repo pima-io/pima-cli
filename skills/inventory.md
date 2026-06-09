@@ -53,8 +53,8 @@ each store/warehouse.
 - `pima inventory fulfillment` is the first choice for "where can this SKU be
   fulfilled from?" It ranks locations by sellable/projected stock and includes
   route eligibility plus route-action metadata for order items in `--json`.
-- `pima sku show <id>` returns a SKU's detail including its per-location
-  inventory.
+- `pima sku show <id-or-name>` returns SKU master data and detail. Use it when
+  you need the SKU record itself; use `inventory availability` for counts.
 - `pima resource list units --q <SKU>` lists units (filterable).
 
 Prefer the optimized inventory commands over paging raw units. Use raw units

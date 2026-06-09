@@ -1,16 +1,18 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
 
-// Fetch a report as JSON. Reports live at /reports/<name> (e.g. sales_report,
-// performance_report, inventory_on_hand_report). Requires reports:read.
+// Fetch a legacy report payload as JSON. For sales metrics, use `metrics sales`;
+// most report endpoints return UI/build metadata rather than computed rows.
 export default class ReportGet extends BaseCommand {
-  static description = 'Fetch a report as JSON. Requires scope: reports:read.'
+  static description =
+    'Fetch a legacy report payload as JSON. For sales answers, prefer `pima metrics sales`. Requires scope: reports:read.'
+
   static examples = [
-    '<%= config.bin %> report get sales_report --param created_from=2026-05-01',
     '<%= config.bin %> report get inventory_on_hand_report --json',
+    '<%= config.bin %> metrics sales --today --channel pos --json',
   ]
 
-  static args = {name: Args.string({required: true, description: 'Report id, e.g. sales_report, inventory_on_hand_report'})}
+  static args = {name: Args.string({required: true, description: 'Report id, e.g. inventory_on_hand_report'})}
   static flags = {
     param: Flags.string({multiple: true, description: 'Extra query param key=value (repeatable)'}),
   }
