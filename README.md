@@ -63,6 +63,9 @@ pima resource export customers --q Dolph  # server-side CSV export, with filters
 pima resource history order_items 12345   # PaperTrail history for a resource record
 pima resource comments products 42        # comments + @-mention metadata
 pima metrics sales --today --channel pos --city "Los Angeles"
+pima metrics products --date 2026-06-06 --location-ids 12,34 --group-by style
+pima metrics team --today --group-by region --limit 3
+pima metrics team --today --q tshirts --sort units --group-by all
 pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
@@ -87,9 +90,10 @@ tools (still bounded by the token).
 
 Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
 `pima_fields`, `pima_search`, `pima_routing`, `pima_sales_summary`,
-`pima_inventory_availability`, `pima_inventory_transfers`, `pima_report` — plus
-`pima_reroute`, `pima_create`, `pima_update`, `pima_action`, and feedback tools
-with `--write`.
+`pima_product_performance`, `pima_team_performance`, `pima_inventory_availability`,
+`pima_inventory_transfers`, `pima_report` — plus `pima_reroute`,
+`pima_create`, `pima_update`, `pima_action`, and feedback tools with
+`--write`.
 Skills are exposed as MCP resources (`skill://data-model`, …) and the full
 surface as `manifest://resources`, so the agent introspects and reads the domain
 model before acting.

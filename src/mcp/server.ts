@@ -17,7 +17,7 @@ import {fetchManifest, findResource} from '../lib/manifest.js'
 import {resolveHost} from '../lib/config.js'
 import {resourceAppUrl} from '../lib/links.js'
 import {fileFeedback, followUpFeedback, getFeedback, type FeedbackKind, type FeedbackPayload} from '../lib/feedback.js'
-import {salesSummary} from '../lib/metrics.js'
+import {productPerformance, salesSummary, teamPerformance} from '../lib/metrics.js'
 import {inventoryAvailability, inventoryTransfers} from '../lib/inventory.js'
 
 export interface McpOptions {
@@ -300,6 +300,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         to: z.string().optional().describe('End date, YYYY-MM-DD'),
         channel: z.enum(['pos', 'online', 'all']).optional(),
         location_id: z.number().optional(),
+        location_ids: z.string().optional().describe('Comma-separated location ids'),
         location: z.string().optional().describe('Location name, reporting name, or short name'),
         short_name: z.string().optional().describe('Location short name'),
         location_group: z.string().optional().describe('Location group name'),
@@ -313,6 +314,98 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     async (params) => {
       try {
         return ok(await salesSummary(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_product_performance',
+    {
+      description:
+        'Fetch optimized top product, SKU, and business Style metrics from stored daily SKU metrics. Use this for questions like "top selling styles for these stores on Saturday" before raw orders/units. In PIMA, business Style = ProductLine. Requires reports:read.',
+      inputSchema: {
+        date: z.string().optional().describe('Single date, YYYY-MM-DD'),
+        from: z.string().optional().describe('Start date, YYYY-MM-DD'),
+        to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        channel: z.enum(['pos', 'online', 'all']).optional(),
+        location_id: z.number().optional(),
+        location_ids: z.string().optional().describe('Comma-separated location ids'),
+        location: z.string().optional().describe('Location name, reporting name, or short name'),
+        short_name: z.string().optional().describe('Location short name'),
+        location_group: z.string().optional().describe('Location group name'),
+        city: z.string().optional().describe('Location city, e.g. Los Angeles'),
+        state: z.string().optional().describe('US state abbreviation, e.g. CA'),
+        all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
+        gender: z.string().optional().describe('Optional gender filter (m, w, u)'),
+        group_by: z
+          .enum(['sku', 'product', 'style', 'product_line', 'category', 'product_type', 'gender'])
+          .optional()
+          .describe('Breakdown grain. Use style for business Style/ProductLine.'),
+        sort: z.enum(['revenue', 'net_revenue', 'units', 'returns', 'return_revenue']).optional().describe('Ranking metric'),
+        limit: z.number().optional().describe('Maximum rows to return'),
+        refresh: z.boolean().optional().describe('Force recalculation of stored daily SKU metrics'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await productPerformance(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_team_performance',
+    {
+      description:
+        'Fetch optimized retail team-member performance by location group/region, location, city, state, or all selected locations. Supports product filters for questions like "who sold the most tshirts today?" Use this before raw orders/timesheets. Requires reports:read.',
+      inputSchema: {
+        date: z.string().optional().describe('Single date, YYYY-MM-DD'),
+        from: z.string().optional().describe('Start date, YYYY-MM-DD'),
+        to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        channel: z.enum(['pos', 'online', 'all']).optional(),
+        location_id: z.number().optional(),
+        location_ids: z.string().optional().describe('Comma-separated location ids'),
+        location: z.string().optional().describe('Location name, reporting name, or short name'),
+        short_name: z.string().optional().describe('Location short name'),
+        location_group: z.string().optional().describe('Location group / region name'),
+        region: z.string().optional().describe('Region / location group name'),
+        city: z.string().optional().describe('Location city, e.g. Los Angeles'),
+        state: z.string().optional().describe('US state abbreviation, e.g. CA'),
+        all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
+        gender: z.string().optional().describe('Optional gender filter (m, w, u)'),
+        q: z.string().optional().describe('Product search, e.g. tshirts, tees, SKU, style, category'),
+        sku: z.string().optional().describe('SKU name, UPC, legacy SKU, product, or style search'),
+        sku_id: z.union([z.string(), z.number()]).optional(),
+        sku_ids: z.string().optional().describe('Comma-separated SKU ids'),
+        product: z.string().optional().describe('Product or style search'),
+        product_id: z.union([z.string(), z.number()]).optional(),
+        product_ids: z.string().optional().describe('Comma-separated product ids'),
+        style: z.string().optional().describe('Business Style / ProductLine search'),
+        product_line: z.string().optional().describe('Business Style / ProductLine search'),
+        product_line_id: z.union([z.string(), z.number()]).optional(),
+        product_line_ids: z.string().optional().describe('Comma-separated ProductLine ids'),
+        category: z.string().optional().describe('Category name'),
+        category_id: z.union([z.string(), z.number()]).optional(),
+        category_ids: z.string().optional().describe('Comma-separated category ids'),
+        product_type: z.string().optional().describe('Product type name'),
+        product_type_id: z.union([z.string(), z.number()]).optional(),
+        product_type_ids: z.string().optional().describe('Comma-separated product type ids'),
+        group_by: z.enum(['location_group', 'region', 'location', 'city', 'state', 'all']).optional().describe('Outer grouping for ranked team members'),
+        sort: z
+          .enum(['net_sales', 'sales', 'sold', 'returns', 'sales_per_hour', 'net_sales_per_hour', 'orders', 'units', 'hours', 'aov', 'auv', 'upt'])
+          .optional()
+          .describe('Ranking metric'),
+        limit: z.number().optional().describe('Maximum users per group to return'),
+        refresh: z.boolean().optional().describe('Force recalculation of stored daily user metrics'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await teamPerformance(await client(), params))
       } catch (error) {
         return fail(error)
       }

@@ -83,11 +83,31 @@ pima resource create invites --data '{"email":"new.hire@example.com","role":"ass
 pima metrics sales --today --channel pos --json | jq '.'
 pima metrics sales --today --channel pos --city "Los Angeles"
 pima metrics sales --from 2026-05-01 --to 2026-05-31 --channel pos --state CA
+pima metrics products --date 2026-06-06 --location-ids 12,34 --group-by style --json | jq '.rows'
+pima metrics products --today --channel pos --city "Los Angeles" --group-by sku --limit 20
+pima metrics team --today --group-by region --limit 3 --json | jq '.groups'
+pima metrics team --date 2026-06-06 --group-by city --sort sales_per_hour
+pima metrics team --today --q tshirts --sort units --group-by all
 ```
 
 Use `metrics sales` for totals like POS sales, orders, units, AOV, UPT, and
 location/state/city/group rollups. It uses server-side stored daily metrics;
 do not page through raw orders to calculate these totals.
+
+Use `metrics products` for top-selling SKUs, products, business Styles, product
+types, categories, and gender splits by date/store/location group. For PIMA
+business language, **Style** means `ProductLine`; request
+`--group-by style`. Do not reconstruct dated style sales from raw `units`:
+sold units do not carry the sale date needed for this question.
+
+Use `metrics team` for Retail Report v2 style team-member performance: top
+team members by region/location group, location, city, state, or all selected
+locations. The default grouping is `location_group`; `region` is an alias.
+Default ranking is `net_sales`, with `sales_per_hour`, `orders`, `units`, `aov`,
+`auv`, and `upt` available. For product-specific questions like "who sold the
+most tshirts today?", pass product filters (`--q`, `--sku`, `--product`,
+`--style`, `--category`, `--product-type`) and usually rank with `--sort units`
+or `--sort sales`. Do not page raw orders/timesheets for this.
 
 ## Answer on-hand and transferring inventory questions
 

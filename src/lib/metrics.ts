@@ -18,6 +18,53 @@ export interface SalesSummaryParams {
   refresh?: boolean
 }
 
+export interface ProductPerformanceParams extends SalesSummaryParams {
+  group_by?: 'sku' | 'product' | 'style' | 'product_line' | 'category' | 'product_type' | 'gender' | string
+  grain?: string
+  sort?: 'revenue' | 'net_revenue' | 'units' | 'returns' | 'return_revenue' | string
+  limit?: number
+}
+
+export interface ProductSelectorParams {
+  q?: string
+  sku?: string
+  sku_id?: string | number
+  sku_ids?: Array<string | number> | string
+  product?: string
+  product_id?: string | number
+  product_ids?: Array<string | number> | string
+  style?: string
+  product_line?: string
+  product_line_id?: string | number
+  product_line_ids?: Array<string | number> | string
+  category?: string
+  category_id?: string | number
+  category_ids?: Array<string | number> | string
+  product_type?: string
+  product_type_id?: string | number
+  product_type_ids?: Array<string | number> | string
+}
+
+export interface TeamPerformanceParams extends SalesSummaryParams, ProductSelectorParams {
+  region?: string
+  group_by?: 'location_group' | 'region' | 'location' | 'city' | 'state' | 'all' | string
+  sort?:
+    | 'net_sales'
+    | 'sales'
+    | 'sold'
+    | 'returns'
+    | 'sales_per_hour'
+    | 'net_sales_per_hour'
+    | 'orders'
+    | 'units'
+    | 'hours'
+    | 'aov'
+    | 'auv'
+    | 'upt'
+    | string
+  limit?: number
+}
+
 export interface SalesSummary {
   metric: 'sales_summary'
   source: {model: string; refreshed?: boolean; calculated_at?: string}
@@ -37,13 +84,115 @@ export interface SalesSummary {
 }
 
 export async function salesSummary(client: Client, params: SalesSummaryParams = {}): Promise<SalesSummary> {
+  return client.get(`/api_metrics/sales_summary.json?${queryString(params)}`)
+}
+
+export interface ProductPerformance {
+  metric: 'product_performance'
+  source: {model: string; refreshed?: boolean; calculated_at?: string}
+  group_by: string
+  group_label: string
+  sort: string
+  limit: number
+  group_count: number
+  limited: boolean
+  range: {from: string; to: string}
+  channel: string
+  gender?: string | null
+  location_scope: SalesSummary['location_scope']
+  totals: ProductPerformanceTotals
+  rows: ProductPerformanceRow[]
+  generated_at: string
+}
+
+export interface ProductPerformanceTotals {
+  revenue_cents: number
+  return_revenue_cents: number
+  net_revenue_cents: number
+  units_sold_count: number
+  returned_units_count: number
+  return_rate_denominator_count: number
+  return_rate: number
+  average_unit_revenue_cents: number
+}
+
+export interface ProductPerformanceRow extends ProductPerformanceTotals {
+  rank: number
+  id: string | number
+  label: string
+  group_type: string
+  entity?: Record<string, unknown>
+}
+
+export async function productPerformance(client: Client, params: ProductPerformanceParams = {}): Promise<ProductPerformance> {
+  return client.get(`/api_metrics/product_performance.json?${queryString(params)}`)
+}
+
+export interface TeamPerformance {
+  metric: 'team_performance'
+  source: {model: string; supporting_model?: string; refreshed?: boolean; calculated_at?: string}
+  group_by: string
+  group_label: string
+  sort: string
+  limit: number
+  range: {from: string; to: string}
+  channel: string
+  gender?: string | null
+  location_scope: SalesSummary['location_scope']
+  product_scope?: {label: string; selector: Record<string, unknown>; search_terms: string[]}
+  totals: TeamPerformanceTotals
+  group_count: number
+  groups: TeamPerformanceGroup[]
+  generated_at: string
+}
+
+export interface TeamPerformanceGroup {
+  group: {
+    id: string | number
+    label: string
+    type: string
+    location_ids: number[]
+    locations?: Array<Record<string, unknown>>
+  }
+  totals: TeamPerformanceTotals
+  user_count: number
+  limited: boolean
+  rows: TeamPerformanceRow[]
+}
+
+export interface TeamPerformanceTotals {
+  sold_cents: number
+  returned_cents: number
+  net_sales_cents: number
+  orders_count: number
+  units_count: number
+  hours_worked: number
+  average_order_value_cents: number
+  units_per_transaction: number
+  average_unit_value_cents: number
+  sales_per_hour_cents: number
+  net_sales_per_hour_cents: number
+}
+
+export interface TeamPerformanceRow extends TeamPerformanceTotals {
+  rank: number
+  id: string | number
+  label: string
+  user?: Record<string, unknown>
+}
+
+export async function teamPerformance(client: Client, params: TeamPerformanceParams = {}): Promise<TeamPerformance> {
+  return client.get(`/api_metrics/team_performance.json?${queryString(params)}`)
+}
+
+function queryString(params: object): string {
   const qs = new URLSearchParams()
-  for (const [key, value] of Object.entries(params)) {
+  for (const [key, value] of Object.entries(params) as Array<[string, unknown]>) {
     if (value == null || value === '' || value === false) continue
     qs.set(key, Array.isArray(value) ? value.join(',') : String(value))
   }
 
-  return client.get(`/api_metrics/sales_summary.json?${qs.toString()}`)
+  return qs.toString()
 }
 
 export function flatSalesSummary(summary: SalesSummary): Record<string, string | number> {
@@ -78,6 +227,41 @@ export function flatSalesSummary(summary: SalesSummary): Record<string, string |
   }
 }
 
+export function flatProductPerformanceRows(payload: ProductPerformance): Array<Record<string, string | number>> {
+  return (payload.rows ?? []).map((row) => ({
+    rank: row.rank,
+    [payload.group_by]: row.label,
+    revenue: dollars(row.revenue_cents),
+    net_revenue: dollars(row.net_revenue_cents),
+    units: row.units_sold_count ?? 0,
+    returns: row.returned_units_count ?? 0,
+    return_revenue: dollars(row.return_revenue_cents),
+    return_rate: percentRate(row.return_rate),
+    auv: dollars(row.average_unit_revenue_cents),
+  }))
+}
+
+export function flatTeamPerformanceRows(payload: TeamPerformance): Array<Record<string, string | number>> {
+  return (payload.groups ?? []).flatMap((group) =>
+    (group.rows ?? []).map((row) => ({
+      [payload.group_by]: group.group.label,
+      rank: row.rank,
+      team_member: row.label,
+      net_sales: dollars(row.net_sales_cents),
+      sales: dollars(row.sold_cents),
+      returns: dollars(row.returned_cents),
+      orders: row.orders_count ?? 0,
+      units: row.units_count ?? 0,
+      hours: row.hours_worked ?? 0,
+      sales_per_hour: dollars(row.sales_per_hour_cents),
+      net_sales_per_hour: dollars(row.net_sales_per_hour_cents),
+      aov: dollars(row.average_order_value_cents),
+      auv: dollars(row.average_unit_value_cents),
+      upt: row.units_per_transaction ?? 0,
+    })),
+  )
+}
+
 function dollars(cents: unknown): string {
   const amount = typeof cents === 'number' ? cents : Number(cents ?? 0)
   return `$${(amount / 100).toFixed(2)}`
@@ -86,4 +270,9 @@ function dollars(cents: unknown): string {
 function percent(value: unknown): string {
   const amount = typeof value === 'number' ? value : Number(value ?? 0)
   return `${amount.toFixed(2)}%`
+}
+
+function percentRate(value: unknown): string {
+  const amount = typeof value === 'number' ? value : Number(value ?? 0)
+  return `${(amount * 100).toFixed(2)}%`
 }

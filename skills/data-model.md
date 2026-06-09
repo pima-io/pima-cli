@@ -63,5 +63,12 @@ include non-sellable statuses.
 
 - When a user says "Style," they almost always mean a `ProductLine`. Confirm if
   ambiguous.
+- For top-selling styles by date/store, use
+  `pima metrics products --group-by style`; it groups
+  `DailySkuPerformanceMetric` by `product_line_id`.
+- For "who sold the most <product/category> today?", use
+  `pima metrics team --q tshirts --sort units --group-by all`. Product filters
+  search SKU, product, business Style/ProductLine, category, and product type;
+  `tshirt`, `tshirts`, `tee`, and `tees` are treated as related terms.
 - `pima sku show <name>` resolves a SKU by its uppercase name.
 - Inventory questions should specify a location — most counts are per-location.
