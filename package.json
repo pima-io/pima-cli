@@ -90,6 +90,12 @@
       "feedback": {
         "description": "File bugs, ask questions, and request features"
       },
+      "metrics": {
+        "description": "Optimized aggregate metrics for agents and reports"
+      },
+      "inventory": {
+        "description": "Transfer-aware inventory availability and on-hand views"
+      },
       "report": {
         "description": "Reports and exports"
       },

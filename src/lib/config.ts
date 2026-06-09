@@ -15,7 +15,7 @@ const CONFIG_DIR = join(homedir(), '.config', 'pima')
 const CONFIG_PATH = join(CONFIG_DIR, 'config.json')
 
 const DEFAULTS: PimaConfig = {
-  host: 'https://pima.example.com', // placeholder — set with `pima auth login --host`
+  host: 'https://pima.io',
 }
 
 export async function loadConfig(): Promise<PimaConfig> {
@@ -34,7 +34,7 @@ export async function saveConfig(patch: Partial<PimaConfig>): Promise<PimaConfig
   return next
 }
 
-// Host resolution order: --host flag > PIMA_HOST env > config file > placeholder.
+// Host resolution order: --host flag > PIMA_HOST env > config file > production default.
 export async function resolveHost(flagHost?: string): Promise<string> {
   if (flagHost) return flagHost.replace(/\/$/, '')
   if (process.env.PIMA_HOST) return process.env.PIMA_HOST.replace(/\/$/, '')

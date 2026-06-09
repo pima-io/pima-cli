@@ -15,7 +15,7 @@ authenticated with OAuth and scoped per domain.
 ## Authenticate (gh-style device flow)
 
 ```
-pima auth login --host https://your-pima-instance
+pima auth login --host https://pima.io
 ```
 
 This prints a one-time code, opens your browser to approve it, and **polls**
@@ -34,7 +34,16 @@ Set `PIMA_TOKEN` (a personal access token) and `PIMA_HOST` to skip the browser
 flow entirely:
 
 ```
-PIMA_HOST=https://your-pima-instance PIMA_TOKEN=… pima orders list --json | jq '.[0]'
+PIMA_HOST=https://pima.io PIMA_TOKEN=… pima orders list --json | jq '.[0]'
+```
+
+## Common reads
+
+```
+pima resources
+pima resource describe orders
+pima resource list orders --variant pos --filter completed_from=2026-06-08 --json
+pima metrics sales --today --channel pos
 ```
 
 ## Output modes

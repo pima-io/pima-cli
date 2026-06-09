@@ -11,7 +11,7 @@ export default class Mcp extends Command {
 
   static examples = [
     '<%= config.bin %> mcp',
-    '<%= config.bin %> mcp --write --host https://your-pima-instance',
+    '<%= config.bin %> mcp --write --host https://pima.io',
   ]
 
   static flags = {

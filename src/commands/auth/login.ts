@@ -8,7 +8,7 @@ export default class AuthLogin extends Command {
   static description = 'Authenticate to a PIMA instance via OAuth device flow (gh-style).'
 
   static examples = [
-    '<%= config.bin %> auth login --host https://pima.buckmason.com',
+    '<%= config.bin %> auth login --host https://pima.io',
     '<%= config.bin %> auth login --read-only',
     '<%= config.bin %> auth login --scopes orders:read,orders:write,inventory:read',
   ]

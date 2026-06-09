@@ -50,6 +50,19 @@ export interface ManifestView {
   react_path?: string
 }
 
+export interface ManifestQueryParam {
+  key: string
+  type: string
+  description?: string
+  choices?: string[]
+}
+
+export interface ManifestQueryContract {
+  params?: ManifestQueryParam[]
+  filters?: ManifestFilter[]
+  views?: ManifestView[]
+}
+
 export interface ManifestAction {
   name: string
   method: string // "|"-delimited verb set, e.g. "GET|POST|PATCH"
@@ -84,6 +97,7 @@ export interface ManifestResource {
   paths?: {index?: string; show?: string; new?: string; edit?: string; create?: string; update?: string; destroy?: string}
   search?: {fields: string[]; placeholder: string | null} | null
   filters?: ManifestFilter[]
+  query_contract?: ManifestQueryContract
   columns?: ManifestColumn[]
   fields?: ManifestField[]
   views?: ManifestView[]

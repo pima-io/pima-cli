@@ -77,10 +77,35 @@ pima resource fields invites
 pima resource create invites --data '{"email":"new.hire@example.com","role":"associate"}' --dry-run
 ```
 
-## Pull a report (reporting / finance)
+## Pull sales metrics (reporting / finance)
 
 ```sh
-pima report get sales_report --param created_from=2026-05-01 --param created_to=2026-05-31 --json | jq '.'
+pima metrics sales --today --channel pos --json | jq '.'
+pima metrics sales --today --channel pos --city "Los Angeles"
+pima metrics sales --from 2026-05-01 --to 2026-05-31 --channel pos --state CA
+```
+
+Use `metrics sales` for totals like POS sales, orders, units, AOV, UPT, and
+location/state/city/group rollups. It uses server-side stored daily metrics;
+do not page through raw orders to calculate these totals.
+
+## Answer on-hand and transferring inventory questions
+
+```sh
+pima inventory availability --sku BMSKUJY3 --short-name POS
+pima inventory availability --product "Field Spec" --city "Los Angeles" --channel pos
+pima inventory availability --category Shirts --state CA --all-pos --json | jq '.summary'
+pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound --status transfering
+```
+
+Use `inventory availability` before raw `units` for available, sellable,
+on-hand, inbound transfer, and projected-availability questions. Use
+`inventory transfers` when the user asks what is currently transferring or
+where pending transfer units are moving.
+
+## Pull a report payload
+
+```sh
 pima report get inventory_on_hand_report --json
 ```
 
@@ -103,5 +128,5 @@ pima resource create order_returns --data '{...}' --yes
 ## Run headless (agents)
 
 ```sh
-PIMA_HOST=https://your-pima PIMA_TOKEN=… pima orders list --status shippable --json | jq '.[0]'
+PIMA_HOST=https://pima.io PIMA_TOKEN=… pima orders list --status shippable --json | jq '.[0]'
 ```

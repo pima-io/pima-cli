@@ -17,6 +17,8 @@ import {fetchManifest, findResource} from '../lib/manifest.js'
 import {resolveHost} from '../lib/config.js'
 import {resourceAppUrl} from '../lib/links.js'
 import {fileFeedback, followUpFeedback, getFeedback, type FeedbackKind, type FeedbackPayload} from '../lib/feedback.js'
+import {salesSummary} from '../lib/metrics.js'
+import {inventoryAvailability, inventoryTransfers} from '../lib/inventory.js'
 
 export interface McpOptions {
   host?: string
@@ -281,6 +283,99 @@ export function buildServer(opts: McpOptions = {}): McpServer {
       try {
         const qs = new URLSearchParams(params ?? {})
         return ok(await (await client()).get(`/reports/${name}.json?${qs.toString()}`))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_sales_summary',
+    {
+      description:
+        'Fetch optimized PIMA sales metrics from stored daily metrics. Use this for questions like "how are POS sales today?" before paging raw orders. Requires reports:read.',
+      inputSchema: {
+        date: z.string().optional().describe('Single date, YYYY-MM-DD'),
+        from: z.string().optional().describe('Start date, YYYY-MM-DD'),
+        to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        channel: z.enum(['pos', 'online', 'all']).optional(),
+        location_id: z.number().optional(),
+        location: z.string().optional().describe('Location name, reporting name, or short name'),
+        short_name: z.string().optional().describe('Location short name'),
+        location_group: z.string().optional().describe('Location group name'),
+        city: z.string().optional().describe('Location city, e.g. Los Angeles'),
+        state: z.string().optional().describe('US state abbreviation, e.g. CA'),
+        all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
+        gender: z.string().optional().describe('Optional gender filter (m, w, u)'),
+        refresh: z.boolean().optional().describe('Force recalculation of stored daily metrics'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await salesSummary(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  const inventorySelectorInputSchema = {
+    q: z.string().optional().describe('SKU, UPC, legacy SKU, product, or product-line search'),
+    sku: z.string().optional().describe('SKU name, UPC, legacy SKU, product, or product-line search'),
+    sku_id: z.union([z.string(), z.number()]).optional(),
+    sku_ids: z.string().optional().describe('Comma-separated SKU ids'),
+    product: z.string().optional().describe('Product or product-line search'),
+    product_id: z.union([z.string(), z.number()]).optional(),
+    product_ids: z.string().optional().describe('Comma-separated product ids'),
+    category: z.string().optional().describe('Category name'),
+    category_id: z.union([z.string(), z.number()]).optional(),
+    category_ids: z.string().optional().describe('Comma-separated category ids'),
+    gender: z.enum(['m', 'w', 'u']).optional(),
+    location_id: z.union([z.string(), z.number()]).optional(),
+    location_ids: z.string().optional().describe('Comma-separated location ids'),
+    location: z.string().optional().describe('Location name, reporting name, or short name'),
+    short_name: z.string().optional().describe('Location short name'),
+    location_group: z.string().optional().describe('Location group name'),
+    city: z.string().optional().describe('Location city, e.g. Los Angeles'),
+    state: z.string().optional().describe('US state abbreviation, e.g. CA'),
+    channel: z.enum(['pos', 'online', 'all']).optional(),
+    all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
+    limit: z.number().optional().describe('Maximum SKUs to resolve'),
+  }
+
+  server.registerTool(
+    'pima_inventory_availability',
+    {
+      description:
+        'Fetch optimized transfer-aware inventory availability. Use this for on hand, available, sellable, inbound transfer, projected availability, location group, city/state, and POS inventory questions before paging raw units. Requires inventory:read.',
+      inputSchema: {
+        ...inventorySelectorInputSchema,
+        include_zero: z.boolean().optional().describe('Include SKU/location rows with all zero counts'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await inventoryAvailability(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_inventory_transfers',
+    {
+      description:
+        'Fetch inventory transfer rows grouped by transfer and SKU. Use this for transferring, inbound/outbound, pending transfer, and location-to-location movement questions. Requires transfers:read.',
+      inputSchema: {
+        ...inventorySelectorInputSchema,
+        direction: z.enum(['inbound', 'outbound', 'both']).optional().describe('Direction relative to selected locations'),
+        status: z.string().optional().describe('Transfer status or comma-separated statuses'),
+      },
+    },
+    async (params) => {
+      try {
+        return ok(await inventoryTransfers(await client(), params))
       } catch (error) {
         return fail(error)
       }

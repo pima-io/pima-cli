@@ -97,6 +97,12 @@ export function renderResourceDetail(r: ManifestResource, gated?: boolean, host?
     out.push('  (none)')
   }
 
+  if (r.query_contract?.params?.length) {
+    out.push('')
+    out.push('QUERY PARAMS:')
+    out.push(`  ${r.query_contract.params.map((param) => param.key).join(', ')}`)
+  }
+
   // Create / update fields
   const writable = (r.fields ?? []).filter((f) => !f.read_only)
   out.push('')

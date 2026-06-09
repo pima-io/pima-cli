@@ -62,6 +62,9 @@ pima resource link orders --filter status=shippable  # browser URL for a resourc
 pima resource export customers --q Dolph  # server-side CSV export, with filters/sort/view preserved
 pima resource history order_items 12345   # PaperTrail history for a resource record
 pima resource comments products 42        # comments + @-mention metadata
+pima metrics sales --today --channel pos --city "Los Angeles"
+pima inventory availability --sku BMSKUJY3 --short-name POS
+pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
 
@@ -83,7 +86,8 @@ reusing your token's scopes. **Read-only by default**; `--write` exposes write
 tools (still bounded by the token).
 
 Tools: `pima_resources`, `pima_describe`, `pima_list`, `pima_show`,
-`pima_fields`, `pima_search`, `pima_routing`, `pima_report` — plus
+`pima_fields`, `pima_search`, `pima_routing`, `pima_sales_summary`,
+`pima_inventory_availability`, `pima_inventory_transfers`, `pima_report` — plus
 `pima_reroute`, `pima_create`, `pima_update`, `pima_action`, and feedback tools
 with `--write`.
 Skills are exposed as MCP resources (`skill://data-model`, …) and the full
@@ -154,6 +158,5 @@ auth, output, and skills loaders are in `src/lib/`. Skills are markdown in
 
 MIT.
 
-Development note: `--host` and `PIMA_HOST` are only for local or development
-PIMA instances. `https://your-pima-instance` is a placeholder, not a production
-host.
+Development note: `--host` and `PIMA_HOST` are only needed for local or
+development PIMA instances. The production host is `https://pima.io`.

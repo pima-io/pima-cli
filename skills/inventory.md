@@ -37,9 +37,44 @@ each store/warehouse.
 
 ## Seeing it
 
+- `pima inventory availability` is the first choice for on-hand, available,
+  sellable, inbound transfer, and projected availability questions. It resolves
+  SKUs by SKU/UPC/product/category/gender and resolves locations by id, name,
+  short name, location group, city, state, channel, or `--all-pos`.
+- `pima inventory transfers` is the first choice for "what is transferring",
+  inbound/outbound transfer, and pending transfer questions. It groups rows by
+  transfer and SKU and includes React UI drill-down links in `--json`.
 - `pima sku show <id>` returns a SKU's detail including its per-location
   inventory.
 - `pima resource list units --q <SKU>` lists units (filterable).
+
+Prefer the optimized inventory commands over paging raw units. Use raw units
+only when you need serial-level inspection.
+
+## Transfer-aware counts
+
+`inventory availability` returns one row per SKU/location:
+
+| field | meaning |
+|---|---|
+| `available` | physical units with `status: available` at the location |
+| `sellable` | available units that are not blocked by bin/order constraints |
+| `pending_transfer` | units at the location committed to a transfer |
+| `transfering` | units currently transferring out from the location |
+| `inbound_transfering` | units currently transferring in to the location |
+| `projected_available` | `available + inbound_transfering` |
+| `future_available` | `available + inbound_transfering + inbound_pending` |
+| `locked_in_error` | available units with an active unit lock |
+| `bin_location_mismatch` | units whose bin belongs to a different location |
+
+Examples:
+
+```sh
+pima inventory availability --sku BMSKUJY3 --short-name POS
+pima inventory availability --product "Field Spec" --city "Los Angeles" --channel pos
+pima inventory availability --category Shirts --state CA --all-pos --json
+pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound --status transfering
+```
 
 ## Changing it
 
