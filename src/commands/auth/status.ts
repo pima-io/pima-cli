@@ -1,5 +1,5 @@
 import {Command, Flags} from '@oclif/core'
-import {readToken} from '../../lib/auth.js'
+import {readFreshToken} from '../../lib/auth.js'
 import {resolveHost} from '../../lib/config.js'
 
 export default class AuthStatus extends Command {
@@ -13,7 +13,7 @@ export default class AuthStatus extends Command {
   async run(): Promise<void> {
     const {flags} = await this.parse(AuthStatus)
     const host = await resolveHost(flags.host)
-    const token = await readToken(host)
+    const token = await readFreshToken(host)
 
     if (!token) {
       if (flags.json) this.log(JSON.stringify({host, authenticated: false}))
@@ -23,11 +23,12 @@ export default class AuthStatus extends Command {
 
     const expires = token!.expires_at ? new Date(token!.expires_at * 1000).toISOString() : 'n/a'
     if (flags.json) {
-      this.log(JSON.stringify({host, authenticated: true, scopes: token!.scopes, expires_at: expires}))
+      this.log(JSON.stringify({host, authenticated: true, scopes: token!.scopes, expires_at: expires, refreshable: Boolean(token!.refresh_token)}))
     } else {
       this.log(`✓ Authenticated to ${host}`)
       this.log(`  Scopes:  ${token!.scopes.join(', ') || '(unknown — using PIMA_TOKEN)'}`)
       this.log(`  Expires: ${expires}`)
+      this.log(`  Refresh: ${token!.refresh_token ? 'available' : 'not available'}`)
     }
   }
 }

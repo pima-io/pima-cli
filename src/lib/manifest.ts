@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto'
 import {Client} from './client.js'
-import {readToken} from './auth.js'
+import {readFreshToken} from './auth.js'
 import {resolveHost} from './config.js'
 import {getEntry, setEntry, deleteEntriesByPrefix} from './store.js'
 
@@ -142,7 +142,7 @@ export interface FetchManifestOptions {
 // token + lean header.
 export async function fetchManifest(opts: FetchManifestOptions = {}): Promise<Manifest> {
   const host = await resolveHost(opts.host)
-  const token = await readToken(host)
+  const token = await readFreshToken(host)
   const key = cacheKey(host, tokenFingerprint(token?.access_token))
 
   if (!opts.refresh) {

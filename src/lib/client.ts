@@ -1,4 +1,4 @@
-import {readToken} from './auth.js'
+import {readFreshToken, refreshStoredToken, type StoredToken} from './auth.js'
 import {resolveHost} from './config.js'
 
 export class ApiError extends Error {
@@ -19,25 +19,29 @@ export interface ClientOptions {
 export class Client {
   private constructor(
     public readonly host: string,
-    private readonly accessToken: string,
+    private token: StoredToken,
   ) {}
 
   static async create(opts: ClientOptions = {}): Promise<Client> {
     const host = await resolveHost(opts.host)
-    const token = await readToken(host)
+    const token = await readFreshToken(host)
     if (!token) {
       const err: any = new Error(`Not authenticated to ${host}. Run \`pima auth login\`.`)
       err.exitCode = 3
       throw err
     }
-    return new Client(host, token.access_token)
+    return new Client(host, token)
   }
 
   async request<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+    return this.requestWithRetry<T>(method, path, body, true)
+  }
+
+  private async requestWithRetry<T>(method: string, path: string, body: unknown, allowRefreshRetry: boolean): Promise<T> {
     const res = await fetch(`${this.host}${path}`, {
       method,
       headers: {
-        Authorization: `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${this.token.access_token}`,
         Accept: 'application/json',
         'X-Pima-View': 'lean',
         ...(body ? {'Content-Type': 'application/json'} : {}),
@@ -47,6 +51,11 @@ export class Client {
 
     const text = await res.text()
     const parsed = text ? safeJson(text) : null
+
+    if (res.status === 401 && allowRefreshRetry && this.token.refresh_token && this.token.source !== 'env') {
+      this.token = await refreshStoredToken(this.host, this.token)
+      return this.requestWithRetry<T>(method, path, body, false)
+    }
 
     if (!res.ok) throw new ApiError(res.status, parsed ?? text)
     return parsed as T
