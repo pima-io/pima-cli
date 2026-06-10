@@ -6,11 +6,16 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.4.0`
-- Latest release tag: `v0.4.0`
+- Current published version: `0.5.0`
+- Latest release tag: `v0.5.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.5.0` added:
+
+- `pima update`
+- `pima update --dry-run`
 
 `v0.4.0` added the first-class question catalog surfaces:
 
@@ -139,26 +144,29 @@ Preferred path:
 
 ```sh
 op account list
-op item list --format json | rg -i 'npm|node|pima-io'
-op item get <npm-item> --otp
+op item list --account <account> --format json | jq -r '.[] | select((.title // "" | test("npm|node"; "i")) or (.additional_information // "" | test("npm|node"; "i")) or ((.urls // []) | tostring | test("npmjs|npm"; "i"))) | [.id, .title, .vault.name, .category, (.additional_information // "")] | @tsv'
+op item get <npm-item> --account <account> --otp
 ```
 
 Do not print OTP values in final responses. If using command substitution, keep
 the OTP only in the publish command.
 
-Known issue from this session: sandboxed `op` calls could not connect to the
-1Password desktop app integration from Codex, even after Full Disk Access made
-the group container visible. The error was:
+Use the 1Password account and item that match the npm user returned by
+`npm --cache /private/tmp/pima-cli-npm-cache whoami`.
 
-```text
-1Password CLI couldn't connect to the 1Password desktop app
+Best release-time path: request one sandbox escalation for the whole
+OTP-and-publish command. That should produce a single 1Password desktop
+authorization prompt from the user and avoids repeated OTP requests:
+
+```sh
+OTP=$(op item get <npm-item> --account <account> --otp); npm --cache /private/tmp/pima-cli-npm-cache publish --access public --otp "$OTP"
 ```
 
-The fix was to run `op` with sandbox escalation. `op account list` succeeded
-outside the sandbox and showed the configured accounts. If this recurs:
+Known issue from this session: sandboxed `op` calls could not connect to the
+1Password desktop app integration from Codex. If this recurs:
 
-- Retry the exact `op ...` command with `sandbox_permissions:
-  "require_escalated"`.
+- Retry the exact `op ...` or combined `OTP=$(op ...) npm publish ...` command
+  with `sandbox_permissions: "require_escalated"`.
 - Ask the user to unlock/restart 1Password.
 - Confirm 1Password > Developer > Integrate with 1Password CLI is enabled.
 - Codex may need to be restarted after Full Disk Access changes.
