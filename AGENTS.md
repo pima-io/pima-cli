@@ -6,11 +6,16 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.5.0`
-- Latest release tag: `v0.5.0`
+- Current published version: `0.6.0`
+- Latest release tag: `v0.6.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.6.0` added:
+
+- `sales_report` guardrails in `report get` and MCP `pima_report`, steering
+  agents to `metrics sales` instead of the legacy scaffold-only report payload.
 
 `v0.5.0` added:
 

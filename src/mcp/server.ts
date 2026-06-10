@@ -20,6 +20,7 @@ import {fileFeedback, followUpFeedback, getFeedback, type FeedbackKind, type Fee
 import {productPerformance, salesSummary, teamPerformance} from '../lib/metrics.js'
 import {inventoryAvailability, inventoryFulfillmentRecommendations, inventoryRisk, inventoryTransfers} from '../lib/inventory.js'
 import {filterQuestionRecipes, loadQuestionCatalog} from '../lib/questions.js'
+import {assertSupportedReportPayload} from '../lib/reports.js'
 
 export interface McpOptions {
   host?: string
@@ -305,6 +306,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
     async ({name, params}) => {
       try {
+        assertSupportedReportPayload(name)
         const qs = new URLSearchParams(params ?? {})
         return ok(await (await client()).get(`/reports/${name}.json?${qs.toString()}`))
       } catch (error) {

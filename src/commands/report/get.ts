@@ -1,5 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base.js'
+import {assertSupportedReportPayload} from '../../lib/reports.js'
 
 // Fetch a legacy report payload as JSON. For sales metrics, use `metrics sales`;
 // most report endpoints return UI/build metadata rather than computed rows.
@@ -19,13 +20,16 @@ export default class ReportGet extends BaseCommand {
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(ReportGet)
-    const qs = new URLSearchParams()
-    for (const pair of flags.param ?? []) {
-      const idx = pair.indexOf('=')
-      if (idx > 0) qs.set(pair.slice(0, idx), pair.slice(idx + 1))
-    }
 
     try {
+      assertSupportedReportPayload(args.name)
+
+      const qs = new URLSearchParams()
+      for (const pair of flags.param ?? []) {
+        const idx = pair.indexOf('=')
+        if (idx > 0) qs.set(pair.slice(0, idx), pair.slice(idx + 1))
+      }
+
       const client = await this.client(flags.host)
       const data = await client.get(`/reports/${args.name}.json?${qs.toString()}`)
       this.log(JSON.stringify(data, null, 2))
