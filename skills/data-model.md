@@ -71,6 +71,14 @@ include non-sellable statuses.
 - For top-selling styles by date/store, use
   `pima metrics products --group-by style`; it groups
   `DailySkuPerformanceMetric` by `product_line_id`.
+- `metrics products` can also include/exclude merchandise by exact name or id:
+  `--style` / `--exclude-style` (retail Style = `ProductLine`), `--category` /
+  `--exclude-category`, `--product-type` / `--exclude-product-type`. There is
+  no Class-level filter (retail Class = PIMA `Style` model); approximate a
+  Class with the category or product-type filters.
+- When a user says "Class" (e.g. "Knit Tops"), that is the PIMA `Style` model —
+  it is not a metrics grain or filter. Don't pass a Class name to `--style`;
+  it will 422 as an unknown style.
 - For "who sold the most <product/category> today?", use
   `pima metrics team --q tshirts --sort units --group-by all`. Product filters
   search SKU, product, business Style/ProductLine, category, and product type;

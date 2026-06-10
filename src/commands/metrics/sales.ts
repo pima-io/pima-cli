@@ -3,7 +3,7 @@ import {BaseCommand} from '../../lib/base.js'
 import {flatSalesSummary, flatSalesSummaryGroups, salesSummary} from '../../lib/metrics.js'
 
 export default class MetricsSales extends BaseCommand {
-  static description = 'Fetch optimized sales metrics. Requires scope: reports:read.'
+  static description = 'Fetch optimized sales metrics. Requires scope: reports:read. Sales metrics are location-grain and cannot filter by merchandise attributes — for that, use `metrics products` (supports --category / --exclude-category, --product-type / --exclude-product-type, --style / --exclude-style, and --group-by gender for a gender split).'
   static examples = [
     '<%= config.bin %> metrics sales --today --channel pos',
     '<%= config.bin %> metrics sales --today --channel pos --group-by location_group',

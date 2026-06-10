@@ -95,6 +95,8 @@ pima metrics products --date 2026-06-06 --location-ids 12,34 --group-by style --
 pima metrics products --today --channel pos --city "Los Angeles" --group-by sku --limit 20
 pima metrics products --today --group-by product_type --location-group-by city
 pima metrics products --from 2026-05-01 --to 2026-05-31 --sort return_rate --min-units 10
+pima metrics products --from 2026-05-31 --to 2026-06-06 --group-by gender --exclude-category "vintage,books"
+pima metrics products --from 2026-06-01 --to 2026-06-08 --style "california t-shirt" --group-by sku
 pima metrics team --today --group-by location_group --limit 3 --json | jq '.groups'
 pima metrics team --date 2026-06-06 --group-by city --sort sales_per_hour
 pima metrics team --today --q tshirts --sort units --group-by all
@@ -106,6 +108,23 @@ plan attainment, and location/state/city/group rollups. It supports
 `--group-by`, `--compare previous_week|previous_period|previous_year`,
 `--under-plan`, `--min-sales`, and `--max-upt`. It uses server-side stored
 daily metrics; do not page through raw orders to calculate these totals.
+`metrics sales` cannot filter by merchandise attributes — for revenue
+questions that include or exclude categories, product types, or Styles
+(e.g. "net sales excluding vintage and books"), use `metrics products` with
+`--category` / `--exclude-category`, `--product-type` /
+`--exclude-product-type`, or `--style` / `--exclude-style` (comma-separated
+names or ids; Style means the business Style / `ProductLine`), combined with
+`--group-by gender` or another grain. Unknown names error rather than
+silently returning unfiltered data, and the response echoes the applied
+filters in `product_scope`.
+
+Filter names must match the PIMA record name exactly (case-insensitive, but
+no partial matching — "vintage" will not match "Vintage Books"). To discover
+exact names first, run the same query with `--group-by category` (or
+`product_type` / `style`) and read the labels, e.g. Buck Mason's vintage
+merchandise spans several categories: "Vintage Books", "Vintage Jewelry",
+"Vintage Accessories", etc. Then pass the full list:
+`--exclude-category "Vintage Books,Vintage Jewelry,Vintage Accessories"`.
 
 Use `metrics products` for top-selling SKUs, products, business Styles, product
 types, categories, and gender splits by date/store/LocationGroup. For PIMA

@@ -6,11 +6,22 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.6.1`
-- Latest release tag: `v0.6.1`
+- Current published version: `0.6.2`
+- Latest release tag: `v0.6.2`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.6.2` added:
+
+- `metrics products` merchandise filters: `--category` / `--exclude-category`,
+  `--product-type` / `--exclude-product-type`, `--style` / `--exclude-style`
+  (exact names or ids; server 422s on unknown values and echoes applied
+  filters in `product_scope`).
+- A stderr warning when the server reports `backfilling: true` (stored rows
+  served while history computes in the background).
+- Retail lingo vs PIMA model mapping in `metrics products` help, README,
+  AGENTS.md, and the data-model/recipes skills.
 
 `v0.6.1` changed:
 
@@ -37,6 +48,19 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 
 Agents should prefer these before probing raw resources for business-metric
 questions.
+
+## Retail lingo vs PIMA models
+
+PIMA model names do not match business labels — wrong mapping = wrong data:
+
+- Retail **"Class"** (e.g. "Knit Tops") = PIMA `Style` model. Not a metrics
+  grain; nearest rollups are `--group-by category` / `product_type`.
+- Retail **"Style"** (e.g. "California T-Shirt") = PIMA `ProductLine`. Use
+  `--group-by style` and the `--style` / `--exclude-style` filters.
+- **"Product"** = one colorway of a Style. **"SKU"** = one size of a Product.
+
+Keep this mapping intact in any command help, skill docs, or MCP tool
+descriptions you touch (canonical write-up: `skills/data-model.md`).
 
 ## Important Surfaces
 

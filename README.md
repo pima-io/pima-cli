@@ -39,6 +39,20 @@ until you finish. No callback server. The token lives in your OS keychain.
 PIMA_TOKEN=… pima orders list --json | jq
 ```
 
+## Retail lingo vs PIMA models
+
+PIMA's model names don't match the labels the business uses. Get this wrong
+and you pull the wrong data (full detail: `pima skill data-model`):
+
+| Retail / UI term | PIMA model | Example | CLI usage |
+|---|---|---|---|
+| **Class** | `Style` | "Knit Tops" | not a metrics grain; nearest rollups: `--group-by category` / `product_type` |
+| **Style** | `ProductLine` | "California T-Shirt" | `--group-by style`, `--style` / `--exclude-style` |
+| **Product** (colorway) | `Product` | "California T-Shirt – Black" | `--group-by product` |
+| **SKU** (size variant) | `Sku` | "BMTSW001-BLK-M" | `--group-by sku`, `pima sku show` |
+
+When someone says "Style" they almost always mean a `ProductLine`.
+
 ## Skills vs. help
 
 - `pima help` / `--help` → **syntax** (flags, args).

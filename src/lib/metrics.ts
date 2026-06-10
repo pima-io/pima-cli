@@ -38,6 +38,12 @@ export interface ProductPerformanceParams extends SalesSummaryParams {
   min_return_rate?: string | number
   max_return_rate?: string | number
   limit?: number
+  categories?: string
+  exclude_categories?: string
+  product_types?: string
+  exclude_product_types?: string
+  styles?: string
+  exclude_styles?: string
 }
 
 export interface ProductSelectorParams {
@@ -140,7 +146,8 @@ export async function salesSummary(client: Client, params: SalesSummaryParams = 
 
 export interface ProductPerformance {
   metric: 'product_performance'
-  source: {model: string; refreshed?: boolean; calculated_at?: string}
+  source: {model: string; refreshed?: boolean; calculated_at?: string; backfilling?: boolean; pending_metric_pairs?: number}
+  backfilling?: boolean
   group_by: string
   group_label: string
   location_group_by?: string
@@ -152,6 +159,14 @@ export interface ProductPerformance {
   range: {from: string; to: string}
   channel: string
   gender?: string | null
+  product_scope?: {
+    categories?: Array<{id: number; name: string}>
+    excluded_categories?: Array<{id: number; name: string}>
+    product_types?: Array<{id: number; name: string}>
+    excluded_product_types?: Array<{id: number; name: string}>
+    styles?: Array<{id: number; name: string}>
+    excluded_styles?: Array<{id: number; name: string}>
+  }
   location_scope: SalesSummary['location_scope']
   totals: ProductPerformanceTotals
   rows: ProductPerformanceRow[]

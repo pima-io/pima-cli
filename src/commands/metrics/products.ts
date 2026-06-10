@@ -3,7 +3,12 @@ import {BaseCommand} from '../../lib/base.js'
 import {flatProductPerformanceRows, productPerformance, type ProductPerformanceParams} from '../../lib/metrics.js'
 
 export default class MetricsProducts extends BaseCommand {
-  static description = 'Fetch optimized product, SKU, and style performance metrics. Requires scope: reports:read.'
+  static description = `Fetch optimized product, SKU, and style performance metrics. Requires scope: reports:read.
+
+Retail lingo vs PIMA models (the names do not match — see the data-model skill):
+- "Style" (e.g. "California T-Shirt") = PIMA ProductLine → use --group-by style and --style / --exclude-style
+- "Class" (e.g. "Knit Tops") = PIMA Style model → not a metrics grain; the closest rollups are --group-by category or product_type
+- "Product" = one colorway of a Style; "SKU" = one size of a Product`
   static examples = [
     '<%= config.bin %> metrics products --date 2026-06-06 --location-ids 12,34 --group-by style',
     '<%= config.bin %> metrics products --today --group-by product_type --location-group-by city',
@@ -11,6 +16,8 @@ export default class MetricsProducts extends BaseCommand {
     '<%= config.bin %> metrics products --from 2026-05-01 --to 2026-05-31 --sort return_rate --min-units 10',
     '<%= config.bin %> metrics products --today --channel pos --city "Los Angeles" --group-by sku --limit 20',
     '<%= config.bin %> metrics products --from 2026-06-01 --to 2026-06-08 --state CA --group-by product --sort units',
+    '<%= config.bin %> metrics products --from 2026-05-31 --to 2026-06-06 --group-by gender --exclude-category "vintage,books"',
+    '<%= config.bin %> metrics products --from 2026-06-01 --to 2026-06-08 --style "california t-shirt" --group-by sku',
   ]
 
   static flags = {
@@ -30,10 +37,16 @@ export default class MetricsProducts extends BaseCommand {
     state: Flags.string({description: 'Location state abbreviation'}),
     'all-pos': Flags.boolean({description: 'Restrict to all POS locations'}),
     gender: Flags.string({description: 'Optional gender filter (m, w, u)'}),
+    category: Flags.string({description: 'Only include these categories (comma-separated names or ids)'}),
+    'exclude-category': Flags.string({description: 'Exclude these categories (comma-separated names or ids, e.g. "vintage,books")'}),
+    'product-type': Flags.string({description: 'Only include these product types (comma-separated names or ids)'}),
+    'exclude-product-type': Flags.string({description: 'Exclude these product types (comma-separated names or ids)'}),
+    style: Flags.string({description: 'Only include these retail Styles, i.e. PIMA ProductLines (comma-separated names or ids, e.g. "california t-shirt")'}),
+    'exclude-style': Flags.string({description: 'Exclude these retail Styles, i.e. PIMA ProductLines (comma-separated names or ids)'}),
     'group-by': Flags.string({
       options: ['sku', 'product', 'style', 'product_line', 'category', 'product_type', 'gender'],
       default: 'sku',
-      description: 'Breakdown grain. Use style for business Style/ProductLine.',
+      description: 'Breakdown grain. style means the retail Style (PIMA ProductLine); a retail "Class" is not a grain — use category or product_type.',
     }),
     'location-group-by': Flags.string({
       options: ['location_group', 'region', 'location', 'city', 'state', 'all'],
@@ -58,6 +71,10 @@ export default class MetricsProducts extends BaseCommand {
 
     try {
       const payload = await productPerformance(await this.client(flags.host), paramsFromFlags(flags, date))
+      if (payload.backfilling) {
+        this.warn('Metrics for part of this range are still computing in the background — rows reflect stored data only. Re-run in a minute or two for complete numbers.')
+      }
+
       if (flags.json) {
         this.log(JSON.stringify(payload, null, 2))
         return
@@ -87,6 +104,12 @@ function paramsFromFlags(flags: Record<string, any>, date?: string): ProductPerf
     state: flags.state,
     all_pos: flags['all-pos'],
     gender: flags.gender,
+    categories: flags.category,
+    exclude_categories: flags['exclude-category'],
+    product_types: flags['product-type'],
+    exclude_product_types: flags['exclude-product-type'],
+    styles: flags.style,
+    exclude_styles: flags['exclude-style'],
     group_by: flags['group-by'],
     location_group_by: flags['location-group-by'],
     sort: flags.sort,
