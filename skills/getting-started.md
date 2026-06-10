@@ -22,8 +22,9 @@ This prints a one-time code, opens your browser to approve it, and **polls**
 the server until you finish — no callback server, no pasting tokens. The token
 is stored in your OS keychain, keyed by host.
 
-- `pima auth login --read-only` requests the `read_only` preset (every
-  `<domain>:read`) — the safe default for agents and reporting.
+- By default, login requests the `read_only` preset (every `<domain>:read`)
+  plus `feedback:write`, so you can file bugs and ask questions. No other
+  write access unless asked for; `--read-only` requests strictly the reads.
 - `pima auth login --scopes orders:read,orders:write,inventory:read` requests
   exactly those scopes; you still approve them on the consent screen.
 - `pima auth status` shows who you are and what scopes you hold.

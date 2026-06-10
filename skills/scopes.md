@@ -37,8 +37,10 @@ by `pima skill scopes` when you're connected).
    `admin:write` but your PIMA role can't edit locations, you still can't.
 3. **`read_only`** is a consent-screen preset selecting every `<domain>:read` —
    the recommended default for agents.
-4. The default scope on login (without `--scopes`/`--read-only`) is
-   `reports:read`, the lowest-risk grant.
+4. The default on login (without `--scopes`) is the `read_only` preset (every
+   `<domain>:read`) plus `feedback:write`, so agents can file bugs and ask
+   questions out of the box. Any other `:write` scope must be requested
+   explicitly; `--read-only` drops `feedback:write` too.
 
 ## Debugging a 403 (exit code 3)
 

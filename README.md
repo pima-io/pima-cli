@@ -23,7 +23,7 @@ pima update
 ## Quick start
 
 ```
-pima auth login --read-only
+pima auth login
 pima questions
 pima resources
 pima skill getting-started

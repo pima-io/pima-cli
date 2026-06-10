@@ -6,11 +6,17 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.6.0`
-- Latest release tag: `v0.6.0`
+- Current published version: `0.6.1`
+- Latest release tag: `v0.6.1`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.6.1` changed:
+
+- `pima auth login` default scopes are now the `read_only` preset (every
+  `<domain>:read`) plus `feedback:write`, instead of just `reports:read`.
+  `--read-only` now requests strictly the reads (drops `feedback:write`).
 
 `v0.6.0` added:
 

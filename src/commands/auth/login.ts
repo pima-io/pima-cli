@@ -15,7 +15,9 @@ export default class AuthLogin extends Command {
 
   static flags = {
     host: Flags.string({description: 'PIMA host URL (saved for future commands)'}),
-    'read-only': Flags.boolean({description: 'Request the read_only preset (every <domain>:read)'}),
+    'read-only': Flags.boolean({
+      description: 'Request strictly the read_only preset (every <domain>:read), without the default feedback:write',
+    }),
     scopes: Flags.string({description: 'Comma-separated scopes to request'}),
   }
 
@@ -26,7 +28,9 @@ export default class AuthLogin extends Command {
     let scopes: string[]
     if (flags.scopes) scopes = flags.scopes.split(',').map((s) => s.trim())
     else if (flags['read-only']) scopes = READ_ONLY
-    else scopes = ['reports:read'] // default; widen with --scopes / consent screen
+    // default: every <domain>:read plus feedback:write (file bugs / ask questions);
+    // widen with --scopes / consent screen
+    else scopes = [...READ_ONLY, 'feedback:write']
 
     this.log(`Authenticating to ${host}…`)
     const token = await deviceLogin(host, scopes)
