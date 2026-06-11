@@ -6,11 +6,19 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.6.2`
-- Latest release tag: `v0.6.2`
+- Current published version: `0.6.3`
+- Latest release tag: `v0.6.3`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.6.3` fixed:
+
+- `sku show <name>` 404ed for any SKU name containing a dot (i.e. nearly all
+  of them, e.g. `BMFS.LSTEE`): the server's `/skus/:id` route segment cannot
+  match dots. The CLI now strips dots from non-numeric lookups — the server
+  resolves names dot-insensitively — so id, name, UPC, and legacy SKU all
+  work as advertised.
 
 `v0.6.2` added:
 
