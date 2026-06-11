@@ -1,6 +1,10 @@
 import {spawn} from 'node:child_process'
 
 export const DEFAULT_UPDATE_PACKAGE = '@pima-io/cli@latest'
+export const UPDATE_COMPLETE_MESSAGE = [
+  'PIMA CLI update complete. Run `pima --version` to confirm.',
+  'Agents: restart any running `pima mcp`, then refresh the live manifest with `pima resources --refresh` or re-read `manifest://resources`.',
+].join('\n')
 
 export type UpdateCommand = {
   command: string

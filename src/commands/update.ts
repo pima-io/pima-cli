@@ -1,5 +1,5 @@
 import {Command, Flags} from '@oclif/core'
-import {buildUpdateCommand, DEFAULT_UPDATE_PACKAGE, runUpdateCommand} from '../lib/update.js'
+import {buildUpdateCommand, DEFAULT_UPDATE_PACKAGE, runUpdateCommand, UPDATE_COMPLETE_MESSAGE} from '../lib/update.js'
 
 export default class Update extends Command {
   static description = 'Install the latest PIMA CLI from npm.'
@@ -26,6 +26,6 @@ export default class Update extends Command {
       const e = error as {message?: string; exitCode?: number}
       this.error(e.message ?? String(error), {exit: e.exitCode ?? 1})
     }
-    this.log('PIMA CLI update complete. Run `pima --version` to confirm.')
+    this.log(UPDATE_COMPLETE_MESSAGE)
   }
 }
