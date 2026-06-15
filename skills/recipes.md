@@ -82,6 +82,28 @@ pima resource fields invites
 pima resource create invites --data '{"email":"new.hire@example.com","role":"associate"}' --dry-run
 ```
 
+## Manage purchase alert emails (operational management)
+
+```sh
+# 1. Find the category records that should send purchase alerts.
+pima resource list categories --q "Vintage" --json | jq '.records[] | {id, name, product_type, purchase_notification_emails}'
+
+# 2. Confirm the live category schema before writing.
+pima resource describe categories
+
+# 3. Preview, then update each category. This field is a full replacement.
+pima resource update categories 163 --data '{"purchase_notification_emails":"cody.wellema@buckmason.com"}' --dry-run
+pima resource update categories 163 --data '{"purchase_notification_emails":"cody.wellema@buckmason.com"}' --yes
+```
+
+Purchase alert emails live on the merch category field
+`purchase_notification_emails`. When an order item sells in a category with
+that field set, PIMA sends `UserMailer.notify_purchase` to those recipients.
+Because `resource update` replaces the field value, preserve existing addresses
+manually when adding a recipient, e.g.
+`"eric.freeman@buckmason.com, cody.wellema@buckmason.com"`. For a whole product
+type like Vintage, list the matching categories and update each category id.
+
 ## Pull sales metrics (reporting / finance)
 
 ```sh
