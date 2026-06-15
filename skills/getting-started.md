@@ -56,6 +56,21 @@ pima resource list orders --variant pos --filter completed_from=2026-06-08 --jso
 pima metrics sales --today --channel pos
 ```
 
+## Metabase reports
+
+Use PIMA to broker a personal Metabase API key and log the official Metabase CLI
+(`mb`) in without exposing the key:
+
+```
+pima metabase login
+mb card query <id> --profile <profile-from-login> --export-format csv > results.csv
+```
+
+This only requires `reports:read` on the PIMA token.
+
+If `mb` is missing, `pima metabase login` installs `@metabase/cli` globally with
+npm and retries the login. Pass `--skip-install` to fail instead.
+
 ## Output modes
 
 Every read command supports three:

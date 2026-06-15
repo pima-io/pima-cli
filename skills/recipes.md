@@ -180,6 +180,30 @@ check stock with `pima inventory risk --q tshirts --all-pos --at-risk`.
 pima report get inventory_on_hand_report --json
 ```
 
+## Enroll Metabase CLI and download a saved-question CSV
+
+```sh
+# 1. Authenticate to PIMA with reports read scope.
+pima auth login --scopes reports:read
+
+# 2. Let PIMA create a personal Metabase API key and log in the official mb CLI.
+# If mb is missing, this installs @metabase/cli globally and retries.
+pima metabase login
+
+# 3. Discover saved questions and export a result set using the printed profile.
+mb card list --profile <profile-from-login>
+mb card query 60 --profile <profile-from-login> --export-format csv > pima-locations.csv
+```
+
+Use this when an agent needs to act through Metabase itself, such as
+downloading CSVs from saved DataClip-imported questions or creating new
+Metabase questions. Only `reports:read` is required on the PIMA token. PIMA
+brokers the Metabase API key server-side and pipes it into `mb auth login`; the
+key is never printed. Pass
+`pima metabase login --skip-install` in locked-down environments where global
+npm installs are not allowed, or `--profile pima-staging` if you need a
+non-default Metabase profile.
+
 ## Receive a clean PO, hold a discrepant one (accounting)
 
 ```sh

@@ -98,6 +98,7 @@ pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
 pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
+pima metabase login                  # provision Metabase access and enroll mb
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
 
@@ -111,6 +112,27 @@ different scopes gets a fresh manifest automatically.
 live create form. Over MCP this is `pima_resources` / `pima_describe` plus the
 `manifest://resources` resource. Add `--refresh` to any of these to bypass the
 cache.
+
+## Metabase CLI enrollment
+
+Users can act through the official Metabase `mb` CLI without manually copying
+API keys. First authenticate to PIMA with a token holding only `reports:read`.
+Then run:
+
+```
+pima metabase login
+```
+
+PIMA invites/provisions your current membership in Metabase, creates a personal
+Metabase API key server-side, pipes it into
+`mb auth login`, and never prints the key. If `mb` is not installed, PIMA CLI
+installs `@metabase/cli` globally with npm and retries. After that, agents can
+use:
+
+```
+mb card list --profile <profile-from-login>
+mb card query <id> --profile <profile-from-login> --export-format csv > results.csv
+```
 
 ## Example questions
 
