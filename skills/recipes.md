@@ -3,7 +3,7 @@ name: recipes
 description: End-to-end command sequences for common multi-step tasks
 when_to_use: When you want a worked example chaining several commands
 scopes: []
-related: [getting-started, question-catalog, order-routing, inventory]
+related: [getting-started, question-catalog, order-routing, inventory, online-inventory]
 ---
 
 # Recipes
@@ -195,6 +195,36 @@ For compound questions like "Who sold the most tshirts today, broken down by
 LocationGroup, and are those stores low on those tshirts?", first run
 `pima metrics team --today --q tshirts --sort units --group-by location_group`, then
 check stock with `pima inventory risk --q tshirts --all-pos --at-risk`.
+
+## Explain or manage online sellable / fulfillable inventory
+
+```sh
+# 1. Load the durable mental model first.
+pima skill online-inventory
+
+# 2. Read the SKU/location inventory picture.
+pima inventory availability --sku BMSKUJY3 --json | jq '.summary, .rows'
+pima inventory fulfillment --sku BMSKUJY3 --json | jq '.'
+
+# 3. Inspect the settings that decide whether inventory counts online,
+#    whether it is fulfillable, and whether it can auto-route.
+pima resource show companies 1 --json | jq '{all_products_sellable_online, enable_all_location_sellable_online, retail_inventory_threshold, all_retail_safety_inventory_threshold, auto_routing_enabled, auto_routing_threshold}'
+pima resource show locations 108 --json | jq '{id, name, short_name, sellable_online, enable_store_ship, routing_enabled, always_auto_route, inventory_threshold, override_inventory_threshold, omit_all_retail_safety_inventory_threshold}'
+pima resource show products 8452 --json | jq '{id, name, all_locations_sellable_online, all_locations_sellable_online_always, oos_threshold, include_transferring_in_sellable}'
+pima resource show skus 12345 --json | jq '{id, name, oos_threshold}'
+
+# 4. Preview writes before changing any behavior.
+pima resource update locations 2 --data '{"routing_enabled":true}' --dry-run
+pima resource update locations 2 --data '{"routing_enabled":true}' --yes
+```
+
+Use this when a user asks why an item is available online, why it did or did
+not auto-route, whether a sellable-online store contributes to ecommerce
+availability, or how to change the associated settings. The key distinction:
+`sellable_online` can make inventory count online, `enable_store_ship` can make
+it part of ship-from-store fulfillment checks, and `routing_enabled` is what
+allows automatic assignment after the order lands. A location can be
+sellable-online but not routable.
 
 ## Pull a report payload
 
