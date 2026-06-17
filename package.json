@@ -1,6 +1,6 @@
 {
   "name": "@pima-io/cli",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
   "bin": {
     "pima": "bin/run.js"

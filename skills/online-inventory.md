@@ -23,6 +23,39 @@ availability without being eligible for automatic order routing.
 These settings are related, but they are not the same. Do not assume a
 sellable-online location can receive automatic SFS work.
 
+## Shopify storefront vs PIMA routing
+
+For Shopify, do not use `routing_enabled` as the ship/pickup gate. The
+storefront can sell inventory online and still force the customer into pickup
+when the inventory exists only at stores.
+
+The current Buck Mason theme reads Shopify `availableForSale`/quantity plus
+PIMA inventory metafields. It treats `DW`/`WH` inventory as the shipping signal
+and non-warehouse store inventory as in-store pickup availability. When a size
+is available from stores but not from `DW`/`WH`, the PDP can show "Available
+for In-Store Pickup Only" and disable the normal ship add-to-cart path until a
+pickup location is selected.
+
+The PIMA `pima.fulfillable` product metafield is a related server-side gate:
+
+- `ship` is based on locations with `enable_store_ship`.
+- `pickup` is based on locations with `pickup_enabled`.
+- `qadj` is the sellable count at pickup-enabled locations that are not also
+  ship-from-store locations.
+
+So the operational flag combination for Shopify pickup-only availability is:
+
+```text
+pickup_enabled: true
+sellable_online: true
+enable_store_ship: false
+routing_enabled: false
+```
+
+Disabling only `routing_enabled` stops PIMA auto-routing, but it does not make
+store inventory pickup-only for Shopify. Leaving `enable_store_ship: true` can
+keep that store in the ship-capable fulfillment pool.
+
 ## Company settings
 
 Use `pima resource link companies 1` or open:
@@ -54,6 +87,7 @@ Important fields:
 
 | field | meaning |
 |---|---|
+| `pickup_enabled` | Location appears as an in-store pickup option and contributes to pickup availability. |
 | `sellable_online` | Location inventory can contribute to ecommerce sellable availability. |
 | `enable_store_ship` | Location participates in ship-from-store availability/fulfillment checks. |
 | `routing_enabled` | Location is eligible for automatic order-item routing. |
@@ -65,6 +99,9 @@ Important fields:
 Example: a store with `sellable_online: true` and `routing_enabled: false`
 can make a SKU appear available online, but PIMA will not auto-route an
 ecommerce order item to that store.
+
+If the goal is Shopify pickup-only, also verify `pickup_enabled: true` and
+`enable_store_ship: false`.
 
 ## Product and SKU settings
 
@@ -120,6 +157,8 @@ Fulfillable availability powers customer-facing ship/pickup decisions.
 - These checks use sellable inventory after thresholds, not raw on-hand.
 - A size is shippable or pickup-eligible only when the relevant pool's sellable
   count is greater than zero.
+- `routing_enabled` does not participate in this ship/pickup metafield; it is
+  only for automatic PIMA assignment after the order exists.
 
 Use:
 

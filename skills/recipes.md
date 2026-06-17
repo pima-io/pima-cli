@@ -226,6 +226,22 @@ it part of ship-from-store fulfillment checks, and `routing_enabled` is what
 allows automatic assignment after the order lands. A location can be
 sellable-online but not routable.
 
+For Shopify pickup-only store availability, verify all four location flags
+together. Disabling routing alone is not enough:
+
+```sh
+pima resource show locations <id> --json | jq '{id, name, short_name, pickup_enabled, sellable_online, enable_store_ship, routing_enabled}'
+
+# Pickup-only for Shopify, without PIMA auto-routing:
+pima resource update locations <id> --data '{"pickup_enabled":true,"sellable_online":true,"enable_store_ship":false,"routing_enabled":false}' --dry-run
+```
+
+Use `pickup_enabled: true` so the store can be offered for pickup,
+`sellable_online: true` so store units can make the SKU available online,
+`enable_store_ship: false` so the store is not part of the ship-capable
+fulfillment pool, and `routing_enabled: false` so PIMA does not auto-assign
+shipping order items there after checkout.
+
 ## Pull a report payload
 
 ```sh
