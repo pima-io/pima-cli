@@ -1,6 +1,7 @@
 import {Client} from './client.js'
+import {normalizeCalendarParams, type CalendarPeriod, type CalendarPeriodParams} from './calendar.js'
 
-export interface SalesSummaryParams {
+export interface SalesSummaryParams extends CalendarPeriodParams {
   date?: string
   from?: string
   to?: string
@@ -95,6 +96,7 @@ export interface SalesSummary {
   metric: 'sales_summary'
   source: {model: string; refreshed?: boolean; calculated_at?: string}
   range: {from: string; to: string}
+  calendar?: CalendarPeriod
   channel: string
   gender?: string | null
   location_scope: {
@@ -141,7 +143,7 @@ export interface SalesSummaryGroup {
 }
 
 export async function salesSummary(client: Client, params: SalesSummaryParams = {}): Promise<SalesSummary> {
-  return client.get(`/api_metrics/sales_summary.json?${queryString(params)}`)
+  return client.get(`/api_metrics/sales_summary.json?${queryString(normalizeCalendarParams(params))}`)
 }
 
 export interface ProductPerformance {
@@ -157,6 +159,7 @@ export interface ProductPerformance {
   group_count: number
   limited: boolean
   range: {from: string; to: string}
+  calendar?: CalendarPeriod
   channel: string
   gender?: string | null
   product_scope?: {
@@ -210,7 +213,7 @@ export interface ProductPerformanceRow extends ProductPerformanceTotals {
 }
 
 export async function productPerformance(client: Client, params: ProductPerformanceParams = {}): Promise<ProductPerformance> {
-  return client.get(`/api_metrics/product_performance.json?${queryString(params)}`)
+  return client.get(`/api_metrics/product_performance.json?${queryString(normalizeCalendarParams(params))}`)
 }
 
 export interface TeamPerformance {
@@ -221,6 +224,7 @@ export interface TeamPerformance {
   sort: string
   limit: number
   range: {from: string; to: string}
+  calendar?: CalendarPeriod
   channel: string
   gender?: string | null
   location_scope: SalesSummary['location_scope']
@@ -269,7 +273,7 @@ export interface TeamPerformanceRow extends TeamPerformanceTotals {
 }
 
 export async function teamPerformance(client: Client, params: TeamPerformanceParams = {}): Promise<TeamPerformance> {
-  return client.get(`/api_metrics/team_performance.json?${queryString(params)}`)
+  return client.get(`/api_metrics/team_performance.json?${queryString(normalizeCalendarParams(params))}`)
 }
 
 function queryString(params: object): string {
@@ -285,6 +289,7 @@ function queryString(params: object): string {
 export function flatSalesSummary(summary: SalesSummary): Record<string, string | number> {
   const totals = summary.totals ?? {}
   return {
+    ...(summary.calendar?.label ? {calendar: summary.calendar.label} : {}),
     range: summary.range.from === summary.range.to ? summary.range.from : `${summary.range.from}..${summary.range.to}`,
     channel: summary.channel,
     location_scope: summary.location_scope?.label ?? '',

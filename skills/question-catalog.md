@@ -3,7 +3,7 @@ name: question-catalog
 description: Example business questions the CLI can answer and the optimized commands agents should prefer
 when_to_use: When an agent wants ideas for what to ask PIMA or needs to map a natural-language question to the right CLI/API path
 scopes: [reports:read, inventory:read, orders:read, transfers:read]
-related: [recipes, data-model, inventory, order-routing, fulfillment]
+related: [recipes, data-model, calendar, inventory, order-routing, fulfillment]
 ---
 
 # Question catalog
@@ -16,6 +16,11 @@ with `--location-group`, `--location-group-id`, or `--location-group-ids`, and
 group by them with `--group-by location_group` or `--location-group-by
 location_group`. Use `city`, `state`, `location`, or `all` for ad-hoc location
 rollups. `region` is a legacy alias for `location_group`.
+
+For NRF / retail / fiscal calendar questions, do not infer dates manually. Use
+`pima calendar resolve`, or pass `--fy` plus `--nrf-week`, `--nrf-month`, or
+`--nrf-quarter` directly to `metrics` commands. `--period "nrf week 48 in
+FY2025"` is also supported.
 
 ## Sales / Store Health
 
@@ -31,6 +36,10 @@ rollups. `region` is a legacy alias for `location_group`.
   Use `pima metrics sales --from <week-start> --to <week-end> --channel pos --group-by location --sort sales_per_hour`.
 - "Show me POS sales for SoHo and Nashville last Saturday."
   Use `pima metrics sales --date <saturday> --channel pos --location-ids <ids>` after resolving the stores.
+- "Pull net rev in NRF week 48 in FY2025."
+  Use `pima metrics sales --fy 2025 --nrf-week 48 --json` and read `totals.net_sales_cents`.
+- "Compare POS net revenue in NRF week 48 FY2025 to last year."
+  Use `pima metrics sales --fy 2025 --nrf-week 48 --channel pos --compare previous_year --json`.
 
 ## Product Performance
 
@@ -44,6 +53,8 @@ rollups. `region` is a legacy alias for `location_group`.
   Use `pima metrics products --from <week-start> --to <week-end> --state CA --gender w --group-by style`.
 - "What product types are selling best by city?"
   Use `pima metrics products --today --group-by product_type --location-group-by city`.
+- "What were the top styles in NRF week 48 FY2025?"
+  Use `pima metrics products --fy 2025 --nrf-week 48 --group-by style --json`.
 - "Which SKU has the highest return rate in the last 30 days?"
   Use `pima metrics products --from <30-days-ago> --to <today> --group-by sku --sort return_rate --min-units 10`.
 
@@ -59,6 +70,8 @@ rollups. `region` is a legacy alias for `location_group`.
   Use `pima metrics team --today --city "Los Angeles" --gender w --sort sales --group-by all`.
 - "Rank team members by units sold in Nashville last Saturday."
   Use `pima metrics team --date <saturday> --location Nashville --sort units --group-by all`.
+- "Who sold the most in NRF week 48 FY2025?"
+  Use `pima metrics team --fy 2025 --nrf-week 48 --sort net_sales --group-by all --json`.
 - "Which team members have high sales but low UPT?"
   Use `pima metrics team --today --min-sales 1000 --max-upt 1.5 --group-by all`.
 

@@ -93,6 +93,9 @@
       "metrics": {
         "description": "Optimized aggregate metrics for agents and reports"
       },
+      "calendar": {
+        "description": "NRF / retail calendar date resolution"
+      },
       "inventory": {
         "description": "Transfer-aware inventory availability and on-hand views"
       },

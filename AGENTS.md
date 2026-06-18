@@ -6,8 +6,8 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.6.3`
-- Latest release tag: `v0.6.3`
+- Current published version: `0.9.0`
+- Latest release tag: `v0.9.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
@@ -57,6 +57,19 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 Agents should prefer these before probing raw resources for business-metric
 questions.
 
+NRF / retail calendar support includes:
+
+- `pima calendar resolve`
+- `pima calendar resolve --period "nrf week 48 in FY2025"`
+- `metrics sales/products/team` accept `--fy`, `--nrf-week`, `--nrf-month`,
+  `--nrf-quarter`, and `--period`
+- MCP tool `pima_calendar_resolve`
+- Skill `calendar`
+
+Rails remains the source of truth for NRF dates via the sibling `../pima`
+`MerchCalendar::RetailCalendar` integration; do not hard-code 4-5-4 calendar
+math in the CLI.
+
 ## Retail lingo vs PIMA models
 
 PIMA model names do not match business labels — wrong mapping = wrong data:
@@ -73,7 +86,7 @@ descriptions you touch (canonical write-up: `skills/data-model.md`).
 ## Important Surfaces
 
 - `src/commands/` contains oclif commands.
-- `src/lib/` contains shared auth, client, manifest, resource, metrics,
+- `src/lib/` contains shared auth, client, manifest, resource, calendar, metrics,
   inventory, feedback, skills, and question-catalog helpers.
 - `skills/*.md` are bundled agent skills. Adding a markdown file here makes it
   available through `pima skill` and as `skill://<name>` in MCP.
@@ -110,7 +123,8 @@ Useful smoke checks:
 ```sh
 ./bin/dev.js questions --match "who sold tshirts"
 ./bin/dev.js questions --category product --json
-./bin/dev.js skill | rg "questions|question-catalog"
+./bin/dev.js calendar resolve --period "nrf week 48 in FY2025"
+./bin/dev.js skill | rg "calendar|questions|question-catalog"
 ```
 
 ## Packaging Details
@@ -244,6 +258,7 @@ resource paging:
 - `pima questions`
 - `pima skill question-catalog`
 - MCP `pima_question_catalog`
+- `pima calendar resolve` / MCP `pima_calendar_resolve` for NRF/FY periods
 - `pima metrics sales`
 - `pima metrics products`
 - `pima metrics team`

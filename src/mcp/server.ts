@@ -21,6 +21,7 @@ import {productPerformance, salesSummary, teamPerformance} from '../lib/metrics.
 import {inventoryAvailability, inventoryFulfillmentRecommendations, inventoryRisk, inventoryTransfers} from '../lib/inventory.js'
 import {filterQuestionRecipes, loadQuestionCatalog} from '../lib/questions.js'
 import {assertSupportedReportPayload} from '../lib/reports.js'
+import {calendarResolve, normalizeCalendarParams} from '../lib/calendar.js'
 
 export interface McpOptions {
   host?: string
@@ -317,6 +318,32 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
   )
 
+  const calendarInputSchema = {
+    calendar: z.enum(['nrf', 'retail', 'merch', 'fiscal']).optional().describe('Calendar system. Defaults to nrf when FY/week/month/quarter is present.'),
+    fy: z.union([z.string(), z.number()]).optional().describe('NRF / retail fiscal year, e.g. 2025'),
+    fiscal_year: z.union([z.string(), z.number()]).optional().describe('Alias for fy'),
+    nrf_week: z.union([z.string(), z.number()]).optional().describe('NRF week number within the fiscal year'),
+    nrf_month: z.union([z.string(), z.number()]).optional().describe('NRF month number, 1-12'),
+    nrf_quarter: z.union([z.string(), z.number()]).optional().describe('NRF quarter number, 1-4'),
+    period: z.string().optional().describe('Phrase to parse, e.g. "nrf week 48 in FY2025"'),
+  }
+
+  server.registerTool(
+    'pima_calendar_resolve',
+    {
+      description:
+        'Resolve NRF / retail calendar periods to exact Gregorian dates. Use before metrics when the user asks for NRF week/month/quarter/FY language. Requires an active PIMA login.',
+      inputSchema: calendarInputSchema,
+    },
+    async (params) => {
+      try {
+        return ok(await calendarResolve(await client(), params))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
   server.registerTool(
     'pima_sales_summary',
     {
@@ -326,6 +353,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         date: z.string().optional().describe('Single date, YYYY-MM-DD'),
         from: z.string().optional().describe('Start date, YYYY-MM-DD'),
         to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        ...calendarInputSchema,
         compare: z.enum(['previous_period', 'previous_week', 'previous_year']).optional().describe('Comparison range'),
         compare_from: z.string().optional().describe('Explicit comparison start date, YYYY-MM-DD'),
         compare_to: z.string().optional().describe('Explicit comparison end date, YYYY-MM-DD'),
@@ -354,7 +382,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
     async (params) => {
       try {
-        return ok(await salesSummary(await client(), params))
+        return ok(await salesSummary(await client(), normalizeCalendarParams(params)))
       } catch (error) {
         return fail(error)
       }
@@ -370,6 +398,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         date: z.string().optional().describe('Single date, YYYY-MM-DD'),
         from: z.string().optional().describe('Start date, YYYY-MM-DD'),
         to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        ...calendarInputSchema,
         channel: z.enum(['pos', 'online', 'all']).optional(),
         location_id: z.number().optional(),
         location_ids: z.string().optional().describe('Comma-separated location ids'),
@@ -398,7 +427,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
     async (params) => {
       try {
-        return ok(await productPerformance(await client(), params))
+        return ok(await productPerformance(await client(), normalizeCalendarParams(params)))
       } catch (error) {
         return fail(error)
       }
@@ -414,6 +443,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         date: z.string().optional().describe('Single date, YYYY-MM-DD'),
         from: z.string().optional().describe('Start date, YYYY-MM-DD'),
         to: z.string().optional().describe('End date, YYYY-MM-DD'),
+        ...calendarInputSchema,
         channel: z.enum(['pos', 'online', 'all']).optional(),
         location_id: z.number().optional(),
         location_ids: z.string().optional().describe('Comma-separated location ids'),
@@ -460,7 +490,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     },
     async (params) => {
       try {
-        return ok(await teamPerformance(await client(), params))
+        return ok(await teamPerformance(await client(), normalizeCalendarParams(params)))
       } catch (error) {
         return fail(error)
       }

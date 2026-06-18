@@ -52,6 +52,37 @@ describe('metrics helpers', () => {
     assert.equal(qs.get('refresh'), 'true')
   })
 
+  it('fetches sales summary with NRF periods encoded as structured params', async () => {
+    const calls: string[] = []
+    const client = {
+      get: async (path: string) => {
+        calls.push(path)
+        return {
+          metric: 'sales_summary',
+          range: {from: '2025-12-28', to: '2026-01-03'},
+          calendar: {calendar: 'nrf', label: 'FY2025 NRF week 48', grain: 'week', range: {from: '2025-12-28', to: '2026-01-03'}, merch: {}},
+          channel: 'all',
+          location_scope: {label: 'All selected locations', location_ids: [], matches: [], warnings: []},
+          totals: {},
+          by_location: [],
+          source: {model: 'DailyPerformanceMetric'},
+          generated_at: '2026-06-08T00:00:00Z',
+        }
+      },
+    } as any
+
+    await salesSummary(client, {period: 'nrf week 48 in FY2025'})
+
+    const [path, query] = calls[0].split('?')
+    const qs = new URLSearchParams(query)
+
+    assert.equal(path, '/api_metrics/sales_summary.json')
+    assert.equal(qs.get('calendar'), 'nrf')
+    assert.equal(qs.get('fy'), '2025')
+    assert.equal(qs.get('nrf_week'), '48')
+    assert.equal(qs.has('period'), false)
+  })
+
   it('flattens sales summary for human output', () => {
     const flat = flatSalesSummary({
       metric: 'sales_summary',

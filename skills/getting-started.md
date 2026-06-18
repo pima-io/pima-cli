@@ -3,7 +3,7 @@ name: getting-started
 description: Orientation — auth, scopes, output modes, exit codes, and the read→write safety model
 when_to_use: First time using the pima CLI, or wiring it into an agent
 scopes: []
-related: [scopes, data-model, question-catalog, feedback]
+related: [scopes, data-model, calendar, question-catalog, feedback]
 ---
 
 # Getting started with the PIMA CLI
@@ -54,6 +54,8 @@ pima resources
 pima resource describe orders
 pima resource list orders --variant pos --filter completed_from=2026-06-08 --json
 pima metrics sales --today --channel pos
+pima calendar resolve --fy 2025 --nrf-week 48
+pima metrics sales --fy 2025 --nrf-week 48 --json
 ```
 
 ## Metabase reports

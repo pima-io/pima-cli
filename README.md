@@ -64,11 +64,12 @@ pima skill                 # list
 pima skill data-model      # full text of one skill
 pima skill --all           # everything, for an agent to slurp once
 pima skill order-routing --json
+pima calendar resolve --fy 2025 --nrf-week 48
 pima questions --match "who sold tshirts"
 pima questions --category product --json
 ```
 
-v1 skills: `getting-started`, `data-model`, `order-routing`, `scopes`
+v1 skills: `getting-started`, `data-model`, `calendar`, `order-routing`, `scopes`
 (backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`,
 `question-catalog`, `versions`, `comments`, `feedback`).
 
@@ -87,6 +88,9 @@ pima resource export customers --q Dolph  # server-side CSV export, with filters
 pima resource history order_items 12345   # PaperTrail history for a resource record
 pima resource comments products 42        # comments + @-mention metadata
 pima questions                            # example business questions + preferred commands
+pima calendar resolve --fy 2025 --nrf-week 48
+pima metrics sales --fy 2025 --nrf-week 48
+pima metrics sales --period "nrf week 48 in FY2025" --json
 pima metrics sales --today --channel pos --city "Los Angeles"
 pima metrics sales --today --channel pos --group-by location_group
 pima metrics sales --today --location-group-id 12 --group-by location_group
@@ -152,6 +156,12 @@ location_group` to group by them. Use `--city`, `--state`, or `--group-by
 city|state|location` for ad-hoc geographic rollups. `region` remains a legacy
 alias for `location_group`.
 
+NRF / retail calendar questions should use PIMA's server-side merch calendar,
+not hand-rolled date math. Use `pima calendar resolve --fy 2025 --nrf-week 48`
+to inspect dates, or pass `--fy` plus `--nrf-week`, `--nrf-month`, or
+`--nrf-quarter` directly to `metrics` commands. `--period "nrf week 48 in
+FY2025"` is supported for agent-friendly phrasing.
+
 **Sales / Store Health**
 
 - "How are POS sales today by saved LocationGroup?"
@@ -160,6 +170,8 @@ alias for `location_group`.
 - "Which stores have the highest AOV today?"
 - "Which store has the best sales per labor hour this week?"
 - "Show me POS sales for SoHo and Nashville last Saturday."
+- "Pull net rev in NRF week 48 in FY2025."
+- "Compare POS net revenue in NRF week 48 FY2025 to last year."
 
 **Product Performance**
 
@@ -169,6 +181,7 @@ alias for `location_group`.
 - "What are the top women's styles in California this week?"
 - "What product types are selling best by city?"
 - "Which SKU has the highest return rate in the last 30 days?"
+- "What were the top styles in NRF week 48 FY2025?"
 
 **Team Performance**
 
@@ -178,6 +191,7 @@ alias for `location_group`.
 - "Who sold the most women's products in LA?"
 - "Rank team members by units sold in Nashville last Saturday."
 - "Which team members have high sales but low UPT?"
+- "Who sold the most in NRF week 48 FY2025?"
 
 **Inventory**
 
@@ -213,7 +227,7 @@ alias for `location_group`.
 reusing your token's scopes. **Read-only by default**; `--write` exposes write
 tools (still bounded by the token).
 
-Tools: `pima_question_catalog`, `pima_resources`, `pima_describe`, `pima_list`,
+Tools: `pima_question_catalog`, `pima_calendar_resolve`, `pima_resources`, `pima_describe`, `pima_list`,
 `pima_show`, `pima_fields`, `pima_search`, `pima_routing`, `pima_sales_summary`,
 `pima_product_performance`, `pima_team_performance`, `pima_inventory_availability`,
 `pima_inventory_risk`, `pima_inventory_fulfillment_recommendations`,

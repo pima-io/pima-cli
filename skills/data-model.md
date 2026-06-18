@@ -3,7 +3,7 @@ name: data-model
 description: The item-master hierarchy and the critical model-name vs UI-label mapping
 when_to_use: Before querying products/skus or interpreting any "Style"/"Class" field
 scopes: [products:read]
-related: [inventory, order-routing]
+related: [calendar, inventory, order-routing]
 ---
 
 # PIMA data model — read this before touching products
@@ -86,3 +86,6 @@ include non-sellable statuses.
 - `pima resource list skus --q <term>` searches SKUs. `pima sku show
   <id-or-name>` is for an exact SKU detail lookup after you know the identifier.
 - Inventory questions should specify a location — most counts are per-location.
+- For NRF / retail / fiscal week questions, use `pima skill calendar` and pass
+  `--fy` plus `--nrf-week`, `--nrf-month`, or `--nrf-quarter` to metrics
+  commands instead of manually guessing Gregorian dates.
