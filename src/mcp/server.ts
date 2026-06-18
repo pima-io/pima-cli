@@ -120,6 +120,8 @@ export function buildServer(opts: McpOptions = {}): McpServer {
             domain: r.domain,
             scopes: r.scopes,
             supports: r.supports,
+            capabilities: r.capabilities,
+            summary: r.agent_docs?.summary,
           })),
         )
       } catch (error) {

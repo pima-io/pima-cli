@@ -17,6 +17,9 @@ export interface ManifestFilter {
   key: string
   label: string
   type: string
+  description?: string
+  param_key?: string
+  examples?: unknown[]
   choices?: ManifestChoice[]
   options_resource?: string | null
   option_params?: Record<string, unknown> | null
@@ -35,12 +38,19 @@ export interface ManifestField {
   key: string
   label: string
   type: string
+  description?: string | null
   required?: boolean
   read_only?: boolean
   options_resource?: string | null
+  option_params?: Record<string, unknown> | null
   choices?: ManifestChoice[]
   section?: string | null
+  allow_clear?: boolean
+  default?: unknown
+  visible_when?: Record<string, unknown> | null
   multiple?: boolean
+  examples?: unknown[]
+  agent_docs?: ManifestAgentDocs
 }
 
 export interface ManifestView {
@@ -54,7 +64,9 @@ export interface ManifestQueryParam {
   key: string
   type: string
   description?: string
-  choices?: string[]
+  choices?: unknown[]
+  default?: unknown
+  examples?: unknown[]
 }
 
 export interface ManifestQueryContract {
@@ -68,6 +80,10 @@ export interface ManifestAction {
   method: string // "|"-delimited verb set, e.g. "GET|POST|PATCH"
   path: string // uses {id} placeholder
   mutating?: boolean // whether the action changes state (vs. a read-only action)
+  path_params?: ManifestPathParam[]
+  request_schema?: Record<string, unknown> | null
+  response_schema?: Record<string, unknown> | null
+  agent_docs?: ManifestAgentDocs
 }
 
 // Per-resource access, as resolved by the server for the CURRENT caller
@@ -85,24 +101,87 @@ export interface ManifestScopes {
   write?: string
 }
 
+export interface ManifestPathParam {
+  key: string
+  placeholder?: string
+  required?: boolean
+  owner?: boolean
+  resource?: string | null
+  description?: string
+}
+
+export interface ManifestModelContract {
+  name?: string
+  table_name?: string
+  primary_key?: string
+  timestamp_columns?: string[]
+  paper_trail_history?: boolean
+  comments?: boolean
+  agent_docs?: ManifestAgentDocs
+}
+
+export interface ManifestControllerContract {
+  name?: string
+  path?: string
+  resource_id?: string
+  declared_resource_docs?: boolean
+  documented_params?: string[]
+  documented_actions?: string[]
+  agent_docs?: ManifestAgentDocs
+  parameters?: {
+    query?: ManifestQueryParam[]
+    filters?: ManifestFilter[]
+    owner?: ManifestPathParam[]
+  }
+  non_crud_actions?: {
+    member?: ManifestAction[]
+    collection?: ManifestAction[]
+  }
+}
+
+export interface ManifestAgentDocs {
+  summary?: string
+  business_terms?: string[]
+  synonyms?: string[]
+  when_to_use?: string[]
+  avoid_when?: string[]
+  common_workflows?: Array<{name?: string; steps?: string[]}>
+  examples?: Array<{description?: string; cli?: string; [key: string]: unknown}>
+  input_hint?: string
+  requires_confirmation?: boolean
+  dry_run_supported?: boolean
+  side_effects?: string[]
+  preconditions?: string[]
+  failure_modes?: string[]
+  direct_path?: string
+  [key: string]: unknown
+}
+
+export type ManifestCapabilities = Record<string, boolean | string | number | null | undefined>
+
 export interface ManifestResource {
   id: string
   model?: string
+  model_contract?: ManifestModelContract
+  controller_contract?: ManifestControllerContract | null
   title?: string
   singular?: string
   domain?: string
   scopes: ManifestScopes | null
   access?: ManifestAccess
+  capabilities?: ManifestCapabilities
   supports?: {index?: boolean; show?: boolean; create?: boolean; update?: boolean; destroy?: boolean}
   paths?: {index?: string; show?: string; new?: string; edit?: string; create?: string; update?: string; destroy?: string}
   search?: {fields: string[]; placeholder: string | null} | null
   filters?: ManifestFilter[]
   query_contract?: ManifestQueryContract
+  owner_params?: ManifestPathParam[]
   columns?: ManifestColumn[]
   fields?: ManifestField[]
   views?: ManifestView[]
   member_actions?: ManifestAction[]
   collection_actions?: ManifestAction[]
+  agent_docs?: ManifestAgentDocs
 }
 
 export interface Manifest {

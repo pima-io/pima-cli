@@ -31,7 +31,9 @@ pima skill resources                 # LIVE agent briefing rendered from the man
 ```
 
 `resource describe` is the static contract from the manifest (what the resource
-*is*); `resource fields` is the live create form (what the server *currently*
+*is*); it includes agent-facing docs, capabilities, exact query params,
+owner-path params, model metadata, and action preconditions/side effects.
+`resource fields` is the live create form (what the server *currently*
 accepts). Over MCP the same introspection is `pima_resources` (list) and
 `pima_describe` (one resource), plus the `manifest://resources` resource. Lead
 with these before `pima_list` / `pima_create`.

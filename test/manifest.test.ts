@@ -5,38 +5,102 @@ import {renderResourceDetail, renderResourcesBriefing, accessCell} from '../src/
 import {resourceAppUrl} from '../src/lib/links.js'
 
 const SAMPLE: Manifest = {
-  version: '1',
+  version: '3',
   gated: true,
   resources: [
     {
       id: 'orders',
       model: 'Order',
+      controller_contract: {
+        name: 'OrdersController',
+        path: 'orders',
+        resource_id: 'orders',
+        declared_resource_docs: true,
+        documented_params: ['status'],
+        documented_actions: ['cancel'],
+        parameters: {
+          query: [
+            {key: 'q', type: 'string', description: 'Text search across number, email.'},
+            {key: 'sort', type: 'enum', description: 'Sortable column key.', choices: ['number']},
+          ],
+          filters: [{key: 'status', label: 'Status', type: 'select', param_key: 'filters[status]'}],
+          owner: [{key: 'customer_id', placeholder: ':customer_id', owner: true, resource: 'customers', required: true}],
+        },
+        non_crud_actions: {
+          member: [{name: 'cancel', method: 'POST|PATCH', path: '/orders/{id}/cancel', mutating: true}],
+          collection: [],
+        },
+      },
+      model_contract: {
+        name: 'Order',
+        table_name: 'orders',
+        primary_key: 'id',
+        timestamp_columns: ['created_at', 'updated_at'],
+        paper_trail_history: true,
+        comments: true,
+        agent_docs: {summary: 'Orders model records are exposed through the gated resource manifest.'},
+      },
       title: 'Orders',
       singular: 'order',
       domain: 'orders',
       scopes: {read: 'orders:read', write: 'orders:write'},
       access: {read: true, create: false, update: true, destroy: false},
+      capabilities: {index: true, show: true, history: true, comments: true, export: true},
       supports: {index: true, show: true, create: false, update: true, destroy: false},
       paths: {index: '/orders', show: '/orders/{id}', update: '/orders/{id}'},
       search: {fields: ['number', 'email'], placeholder: 'Search orders'},
       filters: [
-        {key: 'status', label: 'Status', type: 'select', choices: [{value: 'open', label: 'Open'}]},
+        {
+          key: 'status',
+          label: 'Status',
+          type: 'select',
+          description: 'Filter by order status.',
+          param_key: 'filters[status]',
+          examples: ['open'],
+          choices: [{value: 'open', label: 'Open'}],
+        },
         {key: 'location_id', label: 'Location', type: 'select', options_resource: 'locations'},
         {key: 'request_status', label: 'Request Status', type: 'select', views: ['requests']},
         {key: 'damaged', label: 'Damages', type: 'boolean', exclude_views: ['requests']},
       ],
+      query_contract: {
+        params: [
+          {key: 'q', type: 'string', description: 'Text search across number, email.', examples: ['123']},
+          {key: 'sort', type: 'enum', description: 'Sortable column key.', choices: ['number']},
+        ],
+      },
+      owner_params: [{key: 'customer_id', placeholder: ':customer_id', owner: true, resource: 'customers', required: true}],
       columns: [{key: 'number', label: 'Number', type: 'string', sortable: true}],
       fields: [
-        {key: 'email', label: 'Email', type: 'string', required: true},
+        {key: 'email', label: 'Email', type: 'string', required: true, description: 'Customer email.'},
         {key: 'note', label: 'Note', type: 'text'},
         {key: 'id', label: 'ID', type: 'integer', read_only: true},
       ],
       views: [{id: 'shippable', title: 'Shippable', path: '/orders/shippable', react_path: '/app/orders/shippable'}],
       member_actions: [
-        {name: 'cancel', method: 'POST|PATCH', path: '/orders/{id}/cancel', mutating: true},
+        {
+          name: 'cancel',
+          method: 'POST|PATCH',
+          path: '/orders/{id}/cancel',
+          mutating: true,
+          agent_docs: {
+            summary: 'Cancel order.',
+            requires_confirmation: true,
+            dry_run_supported: true,
+            side_effects: ['Changes order state.'],
+            failure_modes: ['403 without orders:write.'],
+          },
+        },
         {name: 'invoice', method: 'GET', path: '/orders/{id}/invoice', mutating: false},
       ],
       collection_actions: [{name: 'bulk_edit', method: 'POST', path: '/orders/bulk_edit', mutating: true}],
+      agent_docs: {
+        summary: 'Orders API resource backed by Order.',
+        business_terms: ['orders', 'order'],
+        when_to_use: ['Use this resource for record-level questions about orders.'],
+        avoid_when: ['For aggregate sales questions, prefer metrics sales.'],
+        examples: [{description: 'Describe the contract', cli: 'pima resource describe orders'}],
+      },
     },
     {
       id: 'coupons',
@@ -80,7 +144,7 @@ describe('manifest fetch + findResource', () => {
     globalThis.fetch = mockFetch(SAMPLE, calls)
 
     const manifest = await fetchManifest({refresh: true})
-    assert.equal(manifest.version, '1')
+    assert.equal(manifest.version, '3')
     assert.equal(manifest.resources.length, 2)
     assert.equal(calls[0], 'https://manifest.test/api_manifest.json')
   })
@@ -151,14 +215,22 @@ describe('manifest rendering', () => {
     assert.match(out, /read=orders:read write=orders:write/)
     assert.match(out, /manifest: gated/) // gated note from manifest-level flag
     assert.match(out, /access: read ✓\s+create ✗\s+update ✓\s+destroy ✗/) // access block
+    assert.match(out, /model contract: table=orders pk=id timestamps=created_at\|updated_at/)
+    assert.match(out, /model docs: Orders model records are exposed through the gated resource manifest/)
+    assert.match(out, /controller: OrdersController\s+path=orders resource-docs params=q\|sort\|filters\[status\]\|customer_id actions=cancel/)
+    assert.match(out, /capabilities: index, show, history, comments, export/)
+    assert.match(out, /AGENT GUIDANCE:/)
+    assert.match(out, /Orders API resource backed by Order/)
     assert.match(out, /fields: number, email/) // search
-    assert.match(out, /status \(select, choices: open\)/) // filter w/ choices
+    assert.match(out, /status as filters\[status\] \(select, choices: open\)/) // filter w/ choices
     assert.match(out, /location_id \(select, → locations\)/) // filter w/ options_resource
     assert.match(out, /request_status \(select, views: requests\)/) // filter scoped to a view
     assert.match(out, /damaged \(boolean, except: requests\)/) // filter excluded from a view
+    assert.match(out, /q \(string\).*Text search across number, email/) // query params with docs
+    assert.match(out, /customer_id \(:customer_id\) \[required, owner, → customers\]/) // owner path params
     assert.match(out, /email \(string, required\)/) // create field
     assert.match(out, /id \(integer, read-only\)/) // read-only field listed separately
-    assert.match(out, /cancel \[POST\|PATCH\] \/orders\/\{id\}\/cancel \[mutating\]/) // mutating action
+    assert.match(out, /cancel \[POST\|PATCH\] \/orders\/\{id\}\/cancel \[mutating\] \(confirmation, dry-run\).*Cancel order/) // mutating action
     assert.match(out, /invoice \[GET\] \/orders\/\{id\}\/invoice \[read-only\]/) // non-mutating action
     assert.match(out, /bulk_edit \[POST\] \/orders\/bulk_edit \[mutating\]/) // collection action
   })
@@ -190,6 +262,8 @@ describe('manifest rendering', () => {
     assert.match(out, /## pricing/)
     assert.match(out, /### orders/)
     assert.match(out, /access: r-u- \(r\/c\/u\/d\)/) // per-resource access cell
+    assert.match(out, /docs: Orders API resource backed by Order/)
+    assert.match(out, /capabilities: index, show, history, comments, export/)
     assert.match(out, /search: number, email/)
     assert.match(out, /filters: status, location_id→locations, request_status@requests, damaged!requests/)
     assert.match(out, /create fields: email\*, note/) // required marked with *

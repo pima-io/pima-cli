@@ -102,16 +102,22 @@ pima metabase login                  # provision Metabase access and enroll mb
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
 
-The manifest is **gated**: the server filters it to the caller's ability ∩
-token scopes, so inaccessible resources are simply absent and each resource
-carries an `access` block (read/create/update/destroy) reflecting what your
-token can actually do. The cache is keyed per token, so a re-login with
-different scopes gets a fresh manifest automatically.
+The manifest is **gated**: the server only serves it to an active,
+authenticated PIMA user and filters it to the caller's ability ∩ token scopes,
+so inaccessible resources are simply absent and each resource carries an
+`access` block (read/create/update/destroy) reflecting what your token can
+actually do. The cache is keyed per token, so a re-login with different scopes
+gets a fresh manifest automatically.
 
 `resource describe` is the static manifest contract; `resource fields` is the
 live create form. Over MCP this is `pima_resources` / `pima_describe` plus the
 `manifest://resources` resource. Add `--refresh` to any of these to bypass the
 cache.
+
+Newer manifest versions include agent-facing docs for each resource/model/action:
+business terms, when to use the resource, capabilities such as history/comments
+and export, exact query parameter choices/examples, owner path params, and
+action preconditions/side effects/dry-run guidance.
 
 ## Metabase CLI enrollment
 
