@@ -22,6 +22,7 @@ import {inventoryAvailability, inventoryFulfillmentRecommendations, inventoryRis
 import {filterQuestionRecipes, loadQuestionCatalog} from '../lib/questions.js'
 import {assertSupportedReportPayload} from '../lib/reports.js'
 import {calendarResolve, normalizeCalendarParams} from '../lib/calendar.js'
+import {normalizeProductIds, sendTemplateTestEmail} from '../lib/templates.js'
 
 export interface McpOptions {
   host?: string
@@ -702,6 +703,39 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     async ({resource, id, text}) => {
       try {
         return ok(await createResourceComment(await client(), resource, id, text))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_template_test_send',
+    {
+      description:
+        'Send a Liquid template test email using the same fake-order mechanism as the PIMA template editor. Requires template edit access.',
+      inputSchema: {
+        code: z.string().describe('Template code, e.g. receipt'),
+        email: z.string().email().describe('Recipient email address'),
+        location_id: z.union([z.string(), z.number()]).optional().describe('Location id for location-specific templates'),
+        product_ids: z
+          .array(z.union([z.string(), z.number()]))
+          .optional()
+          .describe('Product ids to include in the fake order'),
+        content: z.string().optional().describe('Template content override to test without saving'),
+        subject: z.string().optional().describe('Template subject override to test without saving'),
+      },
+    },
+    async ({code, email, location_id, product_ids, content, subject}) => {
+      try {
+        return ok(await sendTemplateTestEmail(await client(), {
+          code,
+          email,
+          location_id,
+          product_ids: normalizeProductIds(product_ids),
+          content,
+          subject,
+        }))
       } catch (error) {
         return fail(error)
       }

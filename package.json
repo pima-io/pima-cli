@@ -105,6 +105,9 @@
       "metabase": {
         "description": "Metabase CLI enrollment and reporting workflows"
       },
+      "templates": {
+        "description": "Liquid template preview and test-email workflows"
+      },
       "resource": {
         "description": "Generic access to any PIMA resource (escape hatch)"
       },

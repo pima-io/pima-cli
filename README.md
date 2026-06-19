@@ -102,6 +102,7 @@ pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
 pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
+pima templates send-test receipt --email preview@example.com --product 101 --yes
 pima metabase login                  # provision Metabase access and enroll mb
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
@@ -232,8 +233,8 @@ Tools: `pima_question_catalog`, `pima_calendar_resolve`, `pima_resources`, `pima
 `pima_product_performance`, `pima_team_performance`, `pima_inventory_availability`,
 `pima_inventory_risk`, `pima_inventory_fulfillment_recommendations`,
 `pima_inventory_transfers`, `pima_report` for legacy report payloads — plus
-`pima_reroute`, `pima_create`, `pima_update`, `pima_action`, and feedback tools
-with `--write`.
+`pima_reroute`, `pima_create`, `pima_update`, `pima_action`,
+`pima_template_test_send`, and feedback tools with `--write`.
 Skills are exposed as MCP resources (`skill://data-model`, …) and the full
 surface as `manifest://resources`, so the agent introspects and reads the domain
 model before acting.
