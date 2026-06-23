@@ -82,6 +82,40 @@ pima resource fields invites
 pima resource create invites --data '{"email":"new.hire@example.com","role":"associate"}' --dry-run
 ```
 
+## Move sales between employee profiles (admin)
+
+Use this when a new or reactivated employee profile has sales credited to the
+wrong PIMA account. The server action requires a role with Manage Company and
+an `admin:write` CLI token.
+
+```sh
+# 1. Find the source and target membership ids.
+pima resource list memberships --q "matthew.kim@buckmason.com" --json | jq '.records[] | {id, user_email, user_full_name, status, home_location}'
+pima resource list memberships --q "matt.kim@buckmason.com" --json | jq '.records[] | {id, user_email, user_full_name, status, home_location}'
+
+# 2. Preview the action locally, then ask the server for the affected counts.
+pima resource action memberships 1566 merge_sales \
+  --data '{"to_membership_id":3465,"started_at":"2026-05-05","dry_run":true}' \
+  --dry-run
+pima resource action memberships 1566 merge_sales \
+  --data '{"to_membership_id":3465,"started_at":"2026-05-05","dry_run":true}' \
+  --yes --json | jq '.merge_sales'
+
+# 3. If the count and date window are correct, run the merge.
+pima resource action memberships 1566 merge_sales \
+  --data '{"to_membership_id":3465,"started_at":"2026-05-05"}' \
+  --yes --json | jq '.merge_sales'
+
+# 4. Verify the target user now owns the team sales for the window.
+pima metrics team --from 2026-05-05 --to 2026-06-23 --group-by all --json | jq '.groups[].rows[] | select(.id == 3467)'
+```
+
+`merge_sales` updates `orders.completed_by_id` from the membership in the URL
+to `to_membership_id` for orders completed on or after `started_at` and before
+optional `ended_at`. It also refreshes the affected daily team-performance
+metric rows for both users. Always send `dry_run:true` first and compare the
+returned `orders_count`, `total_cents`, and date range to the source request.
+
 ## Manage purchase alert emails (operational management)
 
 ```sh
