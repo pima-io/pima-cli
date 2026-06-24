@@ -62,6 +62,7 @@ When someone says "Style" they almost always mean a `ProductLine`.
 ```
 pima skill                 # list
 pima skill data-model      # full text of one skill
+pima skill metabase        # ad-hoc data aggregation with authorized mb CLI
 pima skill --all           # everything, for an agent to slurp once
 pima skill order-routing --json
 pima calendar resolve --fy 2025 --nrf-week 48
@@ -71,7 +72,7 @@ pima questions --category product --json
 
 v1 skills: `getting-started`, `data-model`, `calendar`, `order-routing`, `scopes`
 (backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`,
-`question-catalog`, `versions`, `comments`, `feedback`).
+`question-catalog`, `metabase`, `versions`, `comments`, `feedback`).
 
 ## Discoverability
 
@@ -145,6 +146,16 @@ mb card list --profile <profile-from-login>
 mb card query <id> --profile <profile-from-login> --export-format csv > results.csv
 ```
 
+For ad-hoc aggregation questions that do not have a first-class PIMA command,
+agents should inspect `pima questions` and the live API manifest first, resolve
+entity ids through PIMA resources, then use `mb query` when Metabase is already
+authorized. Example: for "Find our average parcel weight from DW over the last
+few months", inspect `shipments` with `pima resource describe shipments
+--refresh`, resolve DW with `pima resource list locations --q DW --json`, then
+run an aggregate `mb query` over the shipment location/date/weight fields. Save
+or create a Metabase card only when the answer needs to be shareable with the
+team. Full workflow: `pima skill metabase`.
+
 ## Example questions
 
 Run `pima questions` for command mappings, or `pima skill question-catalog` for
@@ -193,6 +204,11 @@ FY2025"` is supported for agent-friendly phrasing.
 - "Rank team members by units sold in Nashville last Saturday."
 - "Which team members have high sales but low UPT?"
 - "Who sold the most in NRF week 48 FY2025?"
+
+**Ad-hoc Data Aggregation**
+
+- "Find our average parcel weight from DW over the last few months."
+- "Build a shareable report for average shipment weight by warehouse."
 
 **Inventory**
 

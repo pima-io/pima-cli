@@ -57,6 +57,12 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 Agents should prefer these before probing raw resources for business-metric
 questions.
 
+Ad-hoc data aggregation questions that no optimized PIMA command answers should
+use `pima skill metabase` when the Metabase CLI is authorized. The agent should
+interrogate `pima questions`, the live API manifest, and relevant PIMA resources
+first, then run an ad-hoc `mb query`; create/update a saved Metabase card only
+when the user wants a shareable/team artifact.
+
 NRF / retail calendar support includes:
 
 - `pima calendar resolve`
@@ -265,6 +271,7 @@ resource paging:
 - `pima inventory availability`
 - `pima inventory risk`
 - `pima inventory fulfillment`
+- `pima skill metabase` plus `mb query` for ad-hoc aggregates when authorized
 
 Location groups mean the real PIMA `LocationGroup` model, not only ad-hoc
 geographic groupings. Use `--location-group`, `--location-group-id`,

@@ -3,7 +3,7 @@ name: question-catalog
 description: Example business questions the CLI can answer and the optimized commands agents should prefer
 when_to_use: When an agent wants ideas for what to ask PIMA or needs to map a natural-language question to the right CLI/API path
 scopes: [reports:read, inventory:read, orders:read, transfers:read]
-related: [recipes, data-model, calendar, inventory, order-routing, fulfillment]
+related: [recipes, data-model, calendar, inventory, order-routing, fulfillment, metabase]
 ---
 
 # Question catalog
@@ -21,6 +21,12 @@ For NRF / retail / fiscal calendar questions, do not infer dates manually. Use
 `pima calendar resolve`, or pass `--fy` plus `--nrf-week`, `--nrf-month`, or
 `--nrf-quarter` directly to `metrics` commands. `--period "nrf week 48 in
 FY2025"` is also supported.
+
+For ad-hoc aggregation questions that are not covered by an optimized
+`metrics`, `inventory`, or resource command, use the authorized Metabase CLI when
+available. Interrogate the PIMA API manifest and relevant resources/entities
+first, then run an ad-hoc `mb query`; create a saved Metabase card only when the
+answer needs to be shareable with the team. See `pima skill metabase`.
 
 ## Sales / Store Health
 
@@ -100,6 +106,13 @@ FY2025"` is also supported.
   Use `pima order-item routing --location <soho-id> --json`.
 - "Find orders stuck because inventory is pending transfer."
   Use `pima order-item routing --json`, then cross-check SKUs with `pima inventory transfers`.
+
+## Ad-hoc Data Aggregation
+
+- "Find our average parcel weight from DW over the last few months."
+  First try `pima questions --match "parcel weight"` and inspect `pima resource describe shipments --refresh`; resolve DW with `pima resource list locations --q DW --json`. If no optimized command answers the aggregate and `mb` is authorized, run an ad-hoc `mb query` against shipments using `location_id`, `shipped_at`, and weight fields from the manifest/records. Save a Metabase card only if the user needs a team-shareable query.
+- "Build a shareable report for average shipment weight by warehouse."
+  Use `pima skill metabase`, verify shipment fields through the manifest, then create a saved Metabase card with `mb card create` after the user approves the shareable artifact.
 
 ## Audit / Collaboration
 

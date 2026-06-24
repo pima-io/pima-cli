@@ -3,7 +3,7 @@ name: recipes
 description: End-to-end command sequences for common multi-step tasks
 when_to_use: When you want a worked example chaining several commands
 scopes: []
-related: [getting-started, question-catalog, order-routing, inventory, online-inventory]
+related: [getting-started, question-catalog, metabase, order-routing, inventory, online-inventory]
 ---
 
 # Recipes
@@ -282,7 +282,7 @@ shipping order items there after checkout.
 pima report get inventory_on_hand_report --json
 ```
 
-## Enroll Metabase CLI and download a saved-question CSV
+## Use Metabase for ad-hoc data aggregation
 
 ```sh
 # 1. Authenticate to PIMA with reports read scope.
@@ -298,13 +298,45 @@ mb card query 60 --profile <profile-from-login> --export-format csv > pima-locat
 ```
 
 Use this when an agent needs to act through Metabase itself, such as
-downloading CSVs from saved DataClip-imported questions or creating new
-Metabase questions. Only `reports:read` is required on the PIMA token. PIMA
-brokers the Metabase API key server-side and pipes it into `mb auth login`; the
-key is never printed. Pass
+downloading CSVs from saved DataClip-imported questions, running ad-hoc
+aggregate queries, or creating new Metabase questions. Only `reports:read` is
+required on the PIMA token. PIMA brokers the Metabase API key server-side and
+pipes it into `mb auth login`; the key is never printed. Pass
 `pima metabase login --skip-install` in locked-down environments where global
 npm installs are not allowed, or `--profile pima-staging` if you need a
 non-default Metabase profile.
+
+For questions like "Find our average parcel weight from DW over the last few
+months":
+
+1. Check whether PIMA already has an optimized command:
+   `pima questions --match "parcel weight"`.
+2. Interrogate the live API contract and relevant entities:
+   `pima resource describe shipments --refresh`,
+   `pima resource list locations --q DW --json`, and sample shipment rows if
+   needed to confirm `scale_weight_oz` versus `expected_weight_oz`.
+3. If the CLI can describe the rows but cannot aggregate them efficiently, use
+   an ad-hoc Metabase query:
+
+```sh
+mb query --profile <profile-from-login> --file query.json --dry-run
+mb query --profile <profile-from-login> --file query.json --json
+```
+
+Use `shipments.location_id` for ship-from location and `shipments.shipped_at`
+for the fulfillment date window when the manifest documents those semantics.
+Prefer actual scale weight when present; only fall back to expected/package
+weight if the user agrees that label-estimated weight is acceptable.
+
+If the result needs to be shareable with the team, create a saved Metabase card
+instead of only running the ad-hoc query:
+
+```sh
+mb card create --profile <profile-from-login> --help
+```
+
+Do not create/update saved cards unless the user asks for a link/shareable
+artifact or approves that step. See `pima skill metabase` for the full workflow.
 
 ## Receive a clean PO, hold a discrepant one (accounting)
 

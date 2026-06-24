@@ -3,7 +3,7 @@ name: getting-started
 description: Orientation — auth, scopes, output modes, exit codes, and the read→write safety model
 when_to_use: First time using the pima CLI, or wiring it into an agent
 scopes: []
-related: [scopes, data-model, calendar, question-catalog, feedback]
+related: [scopes, data-model, calendar, question-catalog, metabase, feedback]
 ---
 
 # Getting started with the PIMA CLI
@@ -73,6 +73,13 @@ This only requires `reports:read` on the PIMA token.
 If `mb` is missing, `pima metabase login` installs `@metabase/cli` globally with
 npm and retries the login. Pass `--skip-install` to fail instead.
 
+For ad-hoc aggregation questions that no optimized PIMA command answers cleanly,
+such as average parcel weight by warehouse over a date range, use
+`pima skill metabase`. The workflow is: inspect `pima questions` and the live
+API manifest first, resolve relevant ids through PIMA resources, then run an
+ad-hoc `mb query`; create a saved Metabase card only when the result needs to be
+shareable with the team.
+
 ## Output modes
 
 Every read command supports three:
@@ -111,6 +118,9 @@ not match the labels you see in the UI).
 
 Use `pima skill question-catalog` for example business questions and the
 optimized command path for each one.
+
+Use `pima skill metabase` for ad-hoc data aggregation through the authorized
+Metabase CLI when the answer does not have a first-class PIMA command.
 
 Use `pima skill feedback` to learn when to file bugs, ask questions, or request
 features from an agent session.
