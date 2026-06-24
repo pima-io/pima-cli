@@ -25,7 +25,7 @@ export function parseFilterPairs(pairs: string[]): Record<string, string | strin
       throw err
     }
 
-    const key = pair.slice(0, idx)
+    const key = normalizeFilterKey(pair.slice(0, idx))
     const value = pair.slice(idx + 1)
     const existing = filters[key]
     if (existing === undefined) {
@@ -37,6 +37,11 @@ export function parseFilterPairs(pairs: string[]): Record<string, string | strin
     }
   }
   return filters
+}
+
+function normalizeFilterKey(key: string): string {
+  const match = key.match(/^filters\[(.+)\]$/)
+  return match ? match[1] : key
 }
 
 export function resourceSearchParams(params: ResourceQueryParams = {}): URLSearchParams {
@@ -68,9 +73,10 @@ export function resourceSearchParams(params: ResourceQueryParams = {}): URLSearc
     qs.set(key, Array.isArray(value) ? value.join(',') : String(value))
   }
 
-  for (const [key, value] of Object.entries(params.filters ?? {})) {
+  for (const [rawKey, value] of Object.entries(params.filters ?? {})) {
     if (value === undefined || value === '' || value === false) continue
     if (Array.isArray(value) && value.length === 0) continue
+    const key = normalizeFilterKey(rawKey)
     qs.set(`filters[${key}]`, Array.isArray(value) ? value.join(',') : String(value))
   }
 

@@ -96,4 +96,26 @@ describe('resource export helpers', () => {
       tag: ['vip', 'fraud'],
     })
   })
+
+  it('normalizes manifest-style filter param keys', async () => {
+    const calls: string[] = []
+    const client = {
+      post: async (path: string) => {
+        calls.push(path)
+        return {export: {id: 8, status: 'pending'}}
+      },
+    } as any
+
+    assert.deepEqual(parseFilterPairs(['filters[location_id]=108']), {location_id: '108'})
+
+    await startResourceExport(client, 'shipments', {
+      filters: {'filters[location_id]': '108'},
+    })
+
+    const [, query] = calls[0].split('?')
+    const qs = new URLSearchParams(query)
+
+    assert.equal(qs.get('filters[location_id]'), '108')
+    assert.equal(qs.has('filters[filters[location_id]]'), false)
+  })
 })
