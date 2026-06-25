@@ -135,6 +135,8 @@ Then run:
 pima metabase login
 ```
 
+For the production PIMA host, this enrolls `mb` against
+`https://metabase.pima.io` and normally prints the `pima-production` profile.
 PIMA invites/provisions your current membership in Metabase, creates a personal
 Metabase API key server-side, pipes it into
 `mb auth login`, and never prints the key. If `mb` is not installed, PIMA CLI
@@ -142,8 +144,8 @@ installs `@metabase/cli` globally with npm and retries. After that, agents can
 use:
 
 ```
-mb card list --profile <profile-from-login>
-mb card query <id> --profile <profile-from-login> --export-format csv > results.csv
+mb card list --profile pima-production
+mb card query <id> --profile pima-production --export-format csv > results.csv
 ```
 
 For ad-hoc aggregation questions that do not have a first-class PIMA command,

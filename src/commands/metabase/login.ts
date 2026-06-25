@@ -8,7 +8,7 @@ export default class MetabaseLogin extends BaseCommand {
 
   static examples = [
     '<%= config.bin %> metabase login',
-    '<%= config.bin %> metabase login --profile pima-staging',
+    '<%= config.bin %> metabase login --profile pima-production',
     '<%= config.bin %> metabase login --skip-install',
     '<%= config.bin %> metabase login --mb-command /opt/homebrew/bin/mb',
   ]

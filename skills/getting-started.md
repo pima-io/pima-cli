@@ -65,10 +65,12 @@ Use PIMA to broker a personal Metabase API key and log the official Metabase CLI
 
 ```
 pima metabase login
-mb card query <id> --profile <profile-from-login> --export-format csv > results.csv
+mb card query <id> --profile pima-production --export-format csv > results.csv
 ```
 
-This only requires `reports:read` on the PIMA token.
+On the production PIMA host, this uses `https://metabase.pima.io` and normally
+prints the `pima-production` profile. This only requires `reports:read` on the
+PIMA token.
 
 If `mb` is missing, `pima metabase login` installs `@metabase/cli` globally with
 npm and retries the login. Pass `--skip-install` to fail instead.

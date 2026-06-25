@@ -292,9 +292,9 @@ pima auth login --scopes reports:read
 # If mb is missing, this installs @metabase/cli globally and retries.
 pima metabase login
 
-# 3. Discover saved questions and export a result set using the printed profile.
-mb card list --profile <profile-from-login>
-mb card query 60 --profile <profile-from-login> --export-format csv > pima-locations.csv
+# 3. Discover saved questions and export a result set using the production profile.
+mb card list --profile pima-production
+mb card query 60 --profile pima-production --export-format csv > pima-locations.csv
 ```
 
 Use this when an agent needs to act through Metabase itself, such as
@@ -303,8 +303,8 @@ aggregate queries, or creating new Metabase questions. Only `reports:read` is
 required on the PIMA token. PIMA brokers the Metabase API key server-side and
 pipes it into `mb auth login`; the key is never printed. Pass
 `pima metabase login --skip-install` in locked-down environments where global
-npm installs are not allowed, or `--profile pima-staging` if you need a
-non-default Metabase profile.
+npm installs are not allowed, or `--profile pima-staging` when explicitly
+targeting staging instead of production `https://metabase.pima.io`.
 
 For questions like "Find our average parcel weight from DW over the last few
 months":
@@ -319,8 +319,8 @@ months":
    an ad-hoc Metabase query:
 
 ```sh
-mb query --profile <profile-from-login> --file query.json --dry-run
-mb query --profile <profile-from-login> --file query.json --json
+mb query --profile pima-production --file query.json --dry-run
+mb query --profile pima-production --file query.json --json
 ```
 
 Use `shipments.location_id` for ship-from location and `shipments.shipped_at`
@@ -332,7 +332,7 @@ If the result needs to be shareable with the team, create a saved Metabase card
 instead of only running the ad-hoc query:
 
 ```sh
-mb card create --profile <profile-from-login> --help
+mb card create --profile pima-production --help
 ```
 
 Do not create/update saved cards unless the user asks for a link/shareable

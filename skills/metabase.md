@@ -45,12 +45,15 @@ pima auth login --scopes reports:read
 pima metabase login
 ```
 
-Use the profile printed by `pima metabase login`:
+On the production PIMA host, `pima metabase login` enrolls the official
+Metabase CLI against `https://metabase.pima.io` and normally prints the
+`pima-production` profile. Use the printed profile if PIMA returns a different
+one:
 
 ```sh
-mb card list --profile <profile-from-login>
-mb query --profile <profile-from-login> --help
-mb card create --profile <profile-from-login> --help
+mb card list --profile pima-production
+mb query --profile pima-production --help
+mb card create --profile pima-production --help
 ```
 
 If `mb` is not authorized yet, run `pima metabase login`. If the user explicitly
@@ -62,8 +65,8 @@ limitation.
 For one-off answers, build a query body and dry-run it before execution:
 
 ```sh
-mb query --profile <profile-from-login> --file query.json --dry-run
-mb query --profile <profile-from-login> --file query.json --json
+mb query --profile pima-production --file query.json --dry-run
+mb query --profile pima-production --file query.json --json
 ```
 
 Use `mb query --print-schema` and `mb skills get mbql` when using MBQL. For
@@ -89,8 +92,8 @@ Use a saved Metabase card when the user asks for a link, wants the result shared
 with the team, or the query is likely to be reused.
 
 ```sh
-mb card create --profile <profile-from-login> --help
-mb card query <card-id> --profile <profile-from-login> --export-format csv > results.csv
+mb card create --profile pima-production --help
+mb card query <card-id> --profile pima-production --export-format csv > results.csv
 ```
 
 Name saved questions clearly, include the source resources/fields in the
