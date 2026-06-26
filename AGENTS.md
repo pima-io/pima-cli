@@ -6,8 +6,8 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.9.0`
-- Latest release tag: `v0.9.0`
+- Current published version: `0.14.0`
+- Latest release tag: `v0.14.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
