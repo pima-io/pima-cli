@@ -19,6 +19,11 @@ pima feedback feature --title "Add saved transfer filters" --description "Agents
 Bugs and feature requests create GitHub issues with sanitized context. Bugs and
 features are Codex PR candidates by default.
 
+The default human-readable confirmation shows the submitted subject and a
+tracking number. It intentionally omits private GitHub and Codex session links
+because the reporter may not have access to those systems. Authorized tooling
+can use `--json` when it needs the raw issue and session metadata.
+
 Questions create async answer threads. PIMA runs a read-only, non-TTY Codex
 session against the PIMA codebase, stores the answer, and returns it to the CLI:
 

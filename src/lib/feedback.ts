@@ -125,9 +125,10 @@ export function renderFeedbackResult(result: FeedbackResult): string {
 
   const issue = feedback.github_issue
   const codex = feedback.codex
-  const lines = [`Filed ${feedback.kind} #${issue?.number ?? '?'}${issue?.html_url ? `: ${issue.html_url}` : ''}`]
+  const issueNumber = issue?.number ?? '?'
+  const issueTitle = issue?.title?.trim()
+  const lines = [`Filed ${feedback.kind} #${issueNumber}${issueTitle ? `: ${issueTitle}` : ''}`]
   lines.push(`Codex: ${codex.action}${codex.dispatch ? ` (${codex.dispatch})` : ''}`)
-  if (codex.codex_session_url) lines.push(`Codex session: ${codex.codex_session_url}`)
   return lines.join('\n')
 }
 

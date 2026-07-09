@@ -69,11 +69,24 @@ describe('feedback helpers', () => {
       renderFeedbackResult({
         feedback: {
           kind: 'bug',
-          github_issue: {number: 12, html_url: 'https://github.test/issues/12'},
+          github_issue: {number: 12, title: 'Order export returns 500', html_url: 'https://github.test/issues/12'},
           codex: {should_start: true, action: 'create_pr', dispatch: 'started', codex_session_url: 'https://codex.test/s/1'},
         },
       }),
-      'Filed bug #12: https://github.test/issues/12\nCodex: create_pr (started)\nCodex session: https://codex.test/s/1',
+      'Filed bug #12: Order export returns 500\nCodex: create_pr (started)',
+    )
+  })
+
+  it('renders a tracking number when the API omits the issue title', () => {
+    assert.equal(
+      renderFeedbackResult({
+        feedback: {
+          kind: 'feature',
+          github_issue: {number: 44, html_url: 'https://github.test/issues/44'},
+          codex: {action: 'create_pr'},
+        },
+      }),
+      'Filed feature #44\nCodex: create_pr',
     )
   })
 
