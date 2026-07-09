@@ -1,8 +1,9 @@
 import {describe, it, beforeEach, afterEach} from 'node:test'
 import assert from 'node:assert/strict'
-import {fetchManifest, findResource, clearManifestCache, type Manifest} from '../src/lib/manifest.js'
+import {fetchManifest, findResource, clearManifestCache, manifestKeyPrefix, type Manifest} from '../src/lib/manifest.js'
 import {renderResourceDetail, renderResourcesBriefing, accessCell} from '../src/lib/manifest-render.js'
 import {resourceAppUrl} from '../src/lib/links.js'
+import {deleteEntriesByPrefix} from '../src/lib/store.js'
 
 const SAMPLE: Manifest = {
   version: '3',
@@ -190,6 +191,7 @@ describe('manifest cache key (per token)', {concurrency: false}, () => {
     process.env.PIMA_TOKEN = 'token-B'
     await fetchManifest({})
     assert.equal(calls.length, 2, 'different token should miss the cache')
+    assert.equal(await deleteEntriesByPrefix(manifestKeyPrefix(HOST)), 1, 'only the current token manifest should remain cached')
   })
 
   it('clearManifestCache forces a re-fetch for the host (login/logout hook)', async () => {

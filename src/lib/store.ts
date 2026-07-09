@@ -35,6 +35,18 @@ export async function setEntry(host: string, value: unknown): Promise<void> {
   await write(store)
 }
 
+// Persist an entry while pruning stale cache families in the same file write.
+// This keeps large cache values bounded without risking a refreshed token being
+// stored separately from the cleanup that made room for it.
+export async function setEntryAndPrunePrefixes(host: string, value: unknown, prefixes: string[]): Promise<number> {
+  const store = await read()
+  const keys = Object.keys(store).filter((key) => prefixes.some((prefix) => key.startsWith(prefix)))
+  for (const key of keys) delete store[key]
+  store[host] = value
+  await write(store)
+  return keys.length
+}
+
 export async function deleteEntry(host: string): Promise<boolean> {
   const store = await read()
   if (!(host in store)) return false

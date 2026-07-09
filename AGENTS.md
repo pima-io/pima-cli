@@ -18,6 +18,9 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
   tracking number instead of private GitHub and Codex session links that the
   reporter may not be able to access. Raw link metadata remains available via
   `--json` for authorized tooling.
+- Refreshed OAuth tokens now prune stale access-token-fingerprinted manifest
+  cache entries atomically, preventing `~/.config/pima/auth.json` from growing
+  without bound during normal CLI use.
 
 `v0.6.3` fixed:
 

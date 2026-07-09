@@ -1,8 +1,11 @@
 import {createHash} from 'node:crypto'
+import {manifestKeyPrefix} from './cache-keys.js'
 import {Client} from './client.js'
 import {readFreshToken} from './auth.js'
 import {resolveHost} from './config.js'
-import {getEntry, setEntry, deleteEntriesByPrefix} from './store.js'
+import {getEntry, setEntryAndPrunePrefixes, deleteEntriesByPrefix} from './store.js'
+
+export {manifestKeyPrefix} from './cache-keys.js'
 
 // The API manifest is the server's self-description of its full resource
 // surface (GET /api_manifest.json). We cache it to the file store so agents and
@@ -202,8 +205,6 @@ const TTL_MS = 24 * 60 * 60 * 1000 // 24h
 // caller's ability ∩ token scopes, so a different token (e.g. a re-login with
 // different scopes) yields a different manifest — fingerprinting the token
 // naturally misses the stale entry instead of serving the wrong surface.
-export const manifestKeyPrefix = (host: string) => `manifest:${host}:`
-
 function tokenFingerprint(accessToken: string | undefined): string {
   if (!accessToken) return 'anon'
   return createHash('sha256').update(accessToken).digest('hex').slice(0, 8)
@@ -231,7 +232,7 @@ export async function fetchManifest(opts: FetchManifestOptions = {}): Promise<Ma
 
   const client = await Client.create({host: opts.host})
   const manifest = await client.get<Manifest>('/api_manifest.json')
-  await setEntry(key, {fetched_at: Date.now(), manifest} satisfies CacheEntry)
+  await setEntryAndPrunePrefixes(key, {fetched_at: Date.now(), manifest} satisfies CacheEntry, [manifestKeyPrefix(host)])
   return manifest
 }
 

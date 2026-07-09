@@ -1,7 +1,9 @@
 import {describe, it, beforeEach, afterEach} from 'node:test'
 import assert from 'node:assert/strict'
-import {deleteToken, writeToken} from '../src/lib/auth.js'
+import {deleteToken, refreshStoredToken, writeToken} from '../src/lib/auth.js'
+import {manifestKeyPrefix} from '../src/lib/cache-keys.js'
 import {Client} from '../src/lib/client.js'
+import {deleteEntriesByPrefix, getEntry, setEntry} from '../src/lib/store.js'
 
 describe('Client', () => {
   const REFRESH_HOST = 'https://refresh.test'
@@ -17,6 +19,7 @@ describe('Client', () => {
     delete process.env.PIMA_TOKEN
     delete process.env.PIMA_HOST
     await deleteToken(REFRESH_HOST)
+    await deleteEntriesByPrefix(manifestKeyPrefix(REFRESH_HOST))
   })
 
   it('sends the bearer token and X-Pima-View: lean on every request', async () => {
@@ -122,5 +125,43 @@ describe('Client', () => {
       `${REFRESH_HOST}/oauth/token`,
       `${REFRESH_HOST}/orders.json`,
     ])
+  })
+
+  it('prunes stale manifest entries across repeated token refreshes', async () => {
+    delete process.env.PIMA_TOKEN
+    process.env.PIMA_HOST = REFRESH_HOST
+    const prefix = manifestKeyPrefix(REFRESH_HOST)
+    let refreshCount = 0
+    let token = {
+      access_token: 'old-access',
+      refresh_token: 'old-refresh',
+      expires_at: Math.floor(Date.now() / 1000) - 1,
+      scopes: ['orders:read'],
+    }
+    await writeToken(REFRESH_HOST, token)
+
+    globalThis.fetch = (async (url: string) => {
+      assert.equal(url, `${REFRESH_HOST}/oauth/token`)
+      refreshCount += 1
+      return new Response(JSON.stringify({
+        access_token: `new-access-${refreshCount}`,
+        refresh_token: `new-refresh-${refreshCount}`,
+        expires_in: 3600,
+        scope: 'orders:read',
+      }), {status: 200, headers: {'content-type': 'application/json'}})
+    }) as unknown as typeof fetch
+
+    for (let i = 1; i <= 3; i += 1) {
+      const staleKey = `${prefix}stale-${i}`
+      await setEntry(staleKey, {fetched_at: Date.now(), manifest: {resources: new Array(100).fill({id: 'orders'})}})
+
+      token = await refreshStoredToken(REFRESH_HOST, token)
+
+      assert.equal(await getEntry(staleKey), null)
+      assert.equal((await getEntry<typeof token>(REFRESH_HOST))?.access_token, `new-access-${i}`)
+    }
+
+    assert.equal(refreshCount, 3)
+    assert.equal(await deleteEntriesByPrefix(prefix), 0, 'refreshes should leave no stale manifest entries')
   })
 })

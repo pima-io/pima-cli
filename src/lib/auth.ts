@@ -1,6 +1,7 @@
 import open from 'open'
+import {manifestKeyPrefix} from './cache-keys.js'
 import {CLIENT_ID} from './config.js'
-import {getEntry, setEntry, deleteEntry} from './store.js'
+import {getEntry, setEntry, setEntryAndPrunePrefixes, deleteEntry} from './store.js'
 
 export interface StoredToken {
   access_token: string
@@ -63,7 +64,7 @@ export async function refreshStoredToken(host: string, token: StoredToken): Prom
   }
 
   const refreshed = tokenFromResponse(body, token.scopes, token.refresh_token)
-  await writeToken(host, refreshed)
+  await setEntryAndPrunePrefixes(host, refreshed, [manifestKeyPrefix(host)])
   return refreshed
 }
 
