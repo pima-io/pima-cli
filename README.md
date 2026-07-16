@@ -105,6 +105,8 @@ pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
 pima templates send-test receipt --email preview@example.com --product 101 --yes
 pima metabase login                  # provision Metabase access and enroll mb
+pima metabase reports                # built-in PIMA reports and Metabase availability
+pima metabase report fleet_report    # canonical card, filters, and reusable building blocks
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain
 ```
 
@@ -157,6 +159,14 @@ few months", inspect `shipments` with `pima resource describe shipments
 run an aggregate `mb query` over the shipment location/date/weight fields. Save
 or create a Metabase card only when the answer needs to be shareable with the
 team. Full workflow: `pima skill metabase`.
+
+Before recreating a built-in PIMA report in SQL, run `pima metabase reports`
+and `pima metabase report <report-id>`. The live authenticated catalog exposes
+verified canonical questions/dashboards, their filters, and reusable Metabase
+building blocks without publishing the underlying SQL in this package.
+MCP clients can read `metabase://reports` and
+`metabase://reports/<report-id>` or call `pima_metabase_reports` and
+`pima_metabase_report`.
 
 ## Example questions
 

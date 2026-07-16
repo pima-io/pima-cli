@@ -23,6 +23,7 @@ import {filterQuestionRecipes, loadQuestionCatalog} from '../lib/questions.js'
 import {assertSupportedReportPayload} from '../lib/reports.js'
 import {calendarResolve, normalizeCalendarParams} from '../lib/calendar.js'
 import {normalizeProductIds, sendTemplateTestEmail} from '../lib/templates.js'
+import {filterMetabaseReports, metabaseReport, metabaseReports} from '../lib/metabase-reports.js'
 
 export interface McpOptions {
   host?: string
@@ -80,6 +81,43 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     async (uri) => {
       const manifest = await fetchManifest({host: opts.host})
       return {contents: [{uri: uri.href, mimeType: 'application/json', text: JSON.stringify(manifest, null, 2)}]}
+    },
+  )
+
+  server.registerResource(
+    'metabase-report-catalog',
+    'metabase://reports',
+    {
+      title: 'PIMA Metabase report catalog',
+      description: 'Built-in PIMA reports, canonical Metabase equivalents, filters, and reusable building blocks.',
+      mimeType: 'application/json',
+    },
+    async (uri) => {
+      const reports = await metabaseReports(await client())
+      return {contents: [{uri: uri.href, mimeType: 'application/json', text: JSON.stringify(reports, null, 2)}]}
+    },
+  )
+
+  server.registerResource(
+    'metabase-report',
+    new ResourceTemplate('metabase://reports/{id}', {
+      list: async () => ({
+        resources: (await metabaseReports(await client())).map((report) => ({
+          uri: `metabase://reports/${report.id}`,
+          name: report.title,
+          description: `${report.availability} · ${report.category} · ${report.building_blocks.length} building block(s)`,
+          mimeType: 'application/json',
+        })),
+      }),
+    }),
+    {
+      title: 'PIMA Metabase report',
+      description: 'One built-in report with its Metabase card, filters, and composable building blocks.',
+    },
+    async (uri, variables) => {
+      const id = Array.isArray(variables.id) ? variables.id[0] : variables.id
+      const report = await metabaseReport(await client(), String(id))
+      return {contents: [{uri: uri.href, mimeType: 'application/json', text: JSON.stringify(report, null, 2)}]}
     },
   )
 
@@ -313,6 +351,45 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         assertSupportedReportPayload(name)
         const qs = new URLSearchParams(params ?? {})
         return ok(await (await client()).get(`/reports/${name}.json?${qs.toString()}`))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_metabase_reports',
+    {
+      description:
+        'List built-in PIMA reports with their canonical Metabase equivalents, supported filters, and reusable models/questions. Call this before inventing SQL for a custom Metabase question. Requires current Metabase access.',
+      inputSchema: {
+        match: z.string().optional().describe('Match report ids, titles, categories, or building blocks'),
+        category: z.string().optional().describe('Filter to one report category'),
+        available: z.boolean().optional().describe('Only return reports with a mapped Metabase equivalent'),
+      },
+    },
+    async ({match, category, available}) => {
+      try {
+        const reports = await metabaseReports(await client())
+        return ok(filterMetabaseReports(reports, {match, category, available}))
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'pima_metabase_report',
+    {
+      description:
+        'Describe one built-in PIMA report, its canonical Metabase card/dashboard, filter mapping, and reusable building-block references. Use the building blocks as CTEs for custom SQL and apply filters in the outer query. Requires current Metabase access.',
+      inputSchema: {
+        id: z.string().describe('PIMA report id, e.g. fleet_report or product_report'),
+      },
+    },
+    async ({id}) => {
+      try {
+        return ok(await metabaseReport(await client(), id))
       } catch (error) {
         return fail(error)
       }

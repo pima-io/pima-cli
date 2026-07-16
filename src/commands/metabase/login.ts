@@ -61,6 +61,8 @@ export default class MetabaseLogin extends BaseCommand {
         this.log(`  Profile: ${profile}`)
         if (metabase.key_name) this.log(`  Key:     ${metabase.key_name}`)
         this.log('\nTry:')
+        this.log('  pima metabase reports --available')
+        this.log('  pima metabase report fleet_report')
         this.log(`  mb card list --profile ${profile}`)
         this.log(`  mb card query <id> --profile ${profile} --export-format csv > results.csv`)
       }

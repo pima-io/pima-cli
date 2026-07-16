@@ -24,17 +24,54 @@ Metabase instead of paging raw resources. Examples:
 
 1. Run `pima questions --match "<user question>"` to check for an optimized
    command mapping.
-2. Inspect the live PIMA API manifest with `pima resource describe <resource>
+2. Run `pima metabase reports --match "<user question>"` and inspect likely
+   built-in reports with `pima metabase report <report-id>`. If a canonical
+   question already answers the request, run that card. For a customization,
+   begin with its declared building blocks instead of recreating report joins
+   from raw tables.
+3. Inspect the live PIMA API manifest with `pima resource describe <resource>
    --refresh` and, when needed, `pima resource fields <resource> --refresh`.
    Use the manifest to identify exact resources, filters, fields, paths, and
    controller docs. Do not guess column names from UI labels.
-3. Resolve relevant entity ids through PIMA resources before querying, such as
+4. Resolve relevant entity ids through PIMA resources before querying, such as
    `pima resource list locations --q DW --json` for Dallas Warehouse.
-4. If the question requires aggregation over rows/columns that the CLI can
+5. If the question requires aggregation over rows/columns that the CLI can
    describe but not aggregate efficiently, use `mb query` with an ad-hoc native
    SQL or MBQL body.
-5. If the result needs to be shareable with the team, create or update a saved
+6. If the result needs to be shareable with the team, create or update a saved
    Metabase card instead of only running an ad-hoc query.
+
+## Built-in reports and building blocks
+
+PIMA maintains a live authenticated catalog of its built-in reports and their
+Metabase equivalents. This catalog is private to users with current Metabase
+access; the public CLI contains the protocol and workflow, not the underlying
+report SQL.
+
+```sh
+pima metabase reports
+pima metabase reports --available
+pima metabase reports --match fleet
+pima metabase report fleet_report
+```
+
+Over MCP, read `metabase://reports` for the whole live catalog or
+`metabase://reports/<report-id>` for one report. The equivalent tools are
+`pima_metabase_reports` and `pima_metabase_report`.
+
+Each report may expose a canonical question or dashboard plus reusable models,
+questions, or transforms. A building block includes its stable output grain and
+Metabase reference, such as `{{#123-pima-fleet-sales-items}}`.
+
+When writing custom native SQL:
+
+1. Reference the smallest suitable building blocks as CTEs.
+2. Apply requested date, location, product, and other filters in the outer
+   query. Referenced Metabase questions/models do not pass their own variables
+   through to the outer query.
+3. Preserve each block's declared grain and join key to avoid multiplying rows.
+4. Use raw database tables only when the catalog has no suitable block.
+5. Do not edit canonical PIMA cards; duplicate or create a new team question.
 
 ## Authenticate
 
