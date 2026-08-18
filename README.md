@@ -103,6 +103,8 @@ pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
 pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
+pima alteration cancel 74902 --dry-run
+pima alteration cancel 74902 --yes
 pima templates send-test receipt --email preview@example.com --product 101 --yes
 pima metabase login                  # provision Metabase access and enroll mb
 pima skill resources            # live agent briefing rendered from the manifest, grouped by domain

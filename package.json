@@ -1,6 +1,6 @@
 {
   "name": "@pima-io/cli",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
   "bin": {
     "pima": "bin/run.js"
@@ -62,6 +62,9 @@
       },
       "order-item": {
         "description": "Order items: reroute fulfillment location, routing dashboard"
+      },
+      "alteration": {
+        "description": "Alterations: cancel workflow records"
       },
       "sku": {
         "description": "SKUs: show detail and inventory"

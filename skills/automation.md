@@ -65,6 +65,7 @@ don't have to guess. `--data` is the record's fields (the CLI wraps them as
 |---|---|---|
 | Look up an order + its routing | `orders show`, `order-item routing` | `orders:read` |
 | Reroute an item to another location | `order-item reroute <id> --to <loc>` | `orders:write` |
+| Cancel an alteration without deleting its history | `alteration cancel <id> --yes` | `orders:write` |
 | Process a return | `resource create order_returns --data '{...}'` | `orders:write` |
 | Issue store credit | `credit add --customer <id> --amount <n>` | `customers:write` |
 | Look up a customer + credit balance | `customer show <id>` | `customers:read` |
