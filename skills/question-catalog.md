@@ -89,6 +89,8 @@ answer needs to be shareable with the team. See `pima skill metabase`.
   Use `pima inventory availability --q tshirts --city "Los Angeles" --channel pos`.
 - "Which stores are low on best-selling SKUs?"
   Use `pima inventory risk --all-pos --at-risk`.
+- "Which live products are regionally broken or close to broken?"
+  Use `pima inventory risk --live --all-pos --low-stock 5 --at-risk --limit 250 --page 1 --json`, then continue through `pagination.next_page`.
 - "What inventory is transferring into Nashville?"
   Use `pima inventory transfers --location Nashville --direction inbound`.
 - "Which SKUs are oversold or have negative sellable counts?"

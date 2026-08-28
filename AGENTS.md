@@ -6,11 +6,18 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.14.1`
-- Latest release tag: `v0.14.1`
+- Current published version: `0.15.0`
+- Latest release tag: `v0.15.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.15.0` added:
+
+- `pima alteration cancel` for previewing and executing alteration workflow
+  cancellations.
+- Live-catalog inventory selectors, stable SKU pagination, and Shopify product
+  and variant IDs across inventory commands and MCP tools.
 
 `v0.14.1` fixed:
 

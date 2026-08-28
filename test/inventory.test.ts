@@ -27,9 +27,12 @@ describe('inventory helpers', () => {
       location_group_id: 12,
       city: 'Los Angeles',
       state: 'CA',
+      live: true,
+      on_site: true,
       all_pos: true,
       include_zero: true,
       limit: 25,
+      page: 2,
     })
 
     const [path, query] = calls[0].split('?')
@@ -42,9 +45,12 @@ describe('inventory helpers', () => {
     assert.equal(qs.get('location_group_id'), '12')
     assert.equal(qs.get('city'), 'Los Angeles')
     assert.equal(qs.get('state'), 'CA')
+    assert.equal(qs.get('live'), 'true')
+    assert.equal(qs.get('on_site'), 'true')
     assert.equal(qs.get('all_pos'), 'true')
     assert.equal(qs.get('include_zero'), 'true')
     assert.equal(qs.get('limit'), '25')
+    assert.equal(qs.get('page'), '2')
   })
 
   it('fetches transfers with direction and status encoded as query params', async () => {
@@ -107,6 +113,8 @@ describe('inventory helpers', () => {
       days_of_cover: 7,
       low_stock: 2,
       at_risk: true,
+      live: true,
+      page: 3,
       refresh: true,
     })
 
@@ -120,6 +128,8 @@ describe('inventory helpers', () => {
     assert.equal(qs.get('days_of_cover'), '7')
     assert.equal(qs.get('low_stock'), '2')
     assert.equal(qs.get('at_risk'), 'true')
+    assert.equal(qs.get('live'), 'true')
+    assert.equal(qs.get('page'), '3')
     assert.equal(qs.get('refresh'), 'true')
   })
 

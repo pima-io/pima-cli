@@ -9,6 +9,7 @@ export default class InventoryAvailability extends BaseCommand {
     '<%= config.bin %> inventory availability --product "Field Spec" --all-pos',
     '<%= config.bin %> inventory availability --category Shirts --city "Los Angeles" --channel pos',
     '<%= config.bin %> inventory availability --sku BMSKUJY3 --location-group "California Stores" --json',
+    '<%= config.bin %> inventory availability --live --all-pos --include-zero --limit 250 --page 1 --json',
   ]
 
   static flags = {
@@ -23,6 +24,8 @@ export default class InventoryAvailability extends BaseCommand {
     'category-id': Flags.string({description: 'Category id'}),
     'category-ids': Flags.string({description: 'Comma-separated category ids'}),
     gender: Flags.string({options: ['m', 'w', 'u'], description: 'Product gender filter'}),
+    live: Flags.boolean({description: 'Restrict to active products currently on site'}),
+    'on-site': Flags.boolean({description: 'Restrict to products with on_site=true, including archived products'}),
     'location-id': Flags.string({description: 'Location id'}),
     'location-ids': Flags.string({description: 'Comma-separated location ids'}),
     location: Flags.string({description: 'Location name, reporting name, or short name'}),
@@ -36,6 +39,7 @@ export default class InventoryAvailability extends BaseCommand {
     'all-pos': Flags.boolean({description: 'Restrict to all POS locations'}),
     'include-zero': Flags.boolean({description: 'Include SKU/location rows with all zero counts'}),
     limit: Flags.integer({description: 'Maximum SKUs to resolve, up to the server limit'}),
+    page: Flags.integer({description: 'One-based SKU result page'}),
   }
 
   async run(): Promise<void> {
@@ -68,6 +72,8 @@ function paramsFromFlags(flags: Record<string, any>): InventoryAvailabilityParam
     category_id: flags['category-id'],
     category_ids: flags['category-ids'],
     gender: flags.gender,
+    live: flags.live,
+    on_site: flags['on-site'],
     location_id: flags['location-id'],
     location_ids: flags['location-ids'],
     location: flags.location,
@@ -81,5 +87,6 @@ function paramsFromFlags(flags: Record<string, any>): InventoryAvailabilityParam
     all_pos: flags['all-pos'],
     include_zero: flags['include-zero'],
     limit: flags.limit,
+    page: flags.page,
   }
 }

@@ -510,6 +510,8 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     category_id: z.union([z.string(), z.number()]).optional(),
     category_ids: z.string().optional().describe('Comma-separated category ids'),
     gender: z.enum(['m', 'w', 'u']).optional(),
+    live: z.boolean().optional().describe('Restrict to active products currently on site'),
+    on_site: z.literal(true).optional().describe('Restrict to products with on_site=true, including archived products'),
     location_id: z.union([z.string(), z.number()]).optional(),
     location_ids: z.string().optional().describe('Comma-separated location ids'),
     location: z.string().optional().describe('Location name, reporting name, or short name'),
@@ -522,13 +524,14 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     channel: z.enum(['pos', 'online', 'all']).optional(),
     all_pos: z.boolean().optional().describe('Restrict to all POS locations'),
     limit: z.number().optional().describe('Maximum SKUs to resolve'),
+    page: z.number().optional().describe('One-based SKU result page'),
   }
 
   server.registerTool(
     'pima_inventory_availability',
     {
       description:
-        'Fetch optimized transfer-aware inventory availability. Use this for on hand, available, sellable, inbound transfer, projected availability, location group, city/state, and POS inventory questions before paging raw units. Requires inventory:read.',
+        'Fetch optimized transfer-aware inventory availability with exact store counts, Shopify product/variant IDs, live-product filtering, and SKU pagination. Use this for on hand, available, sellable, inbound transfer, projected availability, location group, city/state, and POS inventory questions before paging raw units. Requires inventory:read.',
       inputSchema: {
         ...inventorySelectorInputSchema,
         include_zero: z.boolean().optional().describe('Include SKU/location rows with all zero counts'),
@@ -567,7 +570,7 @@ export function buildServer(opts: McpOptions = {}): McpServer {
     'pima_inventory_risk',
     {
       description:
-        'Fetch inventory risk by combining current transfer-aware availability with recent SKU sales velocity and days of cover. Use this for low stock, fast sellers, and best-selling SKUs that are almost out. Requires inventory:read and reports:read.',
+        'Fetch inventory risk by combining current transfer-aware availability with recent SKU sales velocity and days of cover. Supports exact store counts, Shopify product/variant IDs, live-product filtering, and SKU pagination. Use this for low stock, fast sellers, and best-selling SKUs that are almost out. Requires inventory:read and reports:read.',
       inputSchema: {
         ...inventorySelectorInputSchema,
         date: z.string().optional().describe('Velocity end date, YYYY-MM-DD'),

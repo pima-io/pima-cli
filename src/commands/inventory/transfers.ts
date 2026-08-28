@@ -22,6 +22,8 @@ export default class InventoryTransfers extends BaseCommand {
     'category-id': Flags.string({description: 'Category id'}),
     'category-ids': Flags.string({description: 'Comma-separated category ids'}),
     gender: Flags.string({options: ['m', 'w', 'u'], description: 'Product gender filter'}),
+    live: Flags.boolean({description: 'Restrict to active products currently on site'}),
+    'on-site': Flags.boolean({description: 'Restrict to products with on_site=true, including archived products'}),
     'location-id': Flags.string({description: 'Location id'}),
     'location-ids': Flags.string({description: 'Comma-separated location ids'}),
     location: Flags.string({description: 'Location name, reporting name, or short name'}),
@@ -36,6 +38,7 @@ export default class InventoryTransfers extends BaseCommand {
     direction: Flags.string({options: ['inbound', 'outbound', 'both'], default: 'both', description: 'Transfer direction relative to selected locations'}),
     status: Flags.string({description: 'Transfer status or comma-separated statuses'}),
     limit: Flags.integer({description: 'Maximum SKUs to resolve, up to the server limit'}),
+    page: Flags.integer({description: 'One-based SKU result page'}),
   }
 
   async run(): Promise<void> {
@@ -68,6 +71,8 @@ function paramsFromFlags(flags: Record<string, any>): InventoryTransfersParams {
     category_id: flags['category-id'],
     category_ids: flags['category-ids'],
     gender: flags.gender,
+    live: flags.live,
+    on_site: flags['on-site'],
     location_id: flags['location-id'],
     location_ids: flags['location-ids'],
     location: flags.location,
@@ -82,5 +87,6 @@ function paramsFromFlags(flags: Record<string, any>): InventoryTransfersParams {
     direction: flags.direction,
     status: flags.status,
     limit: flags.limit,
+    page: flags.page,
   }
 }

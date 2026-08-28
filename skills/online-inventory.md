@@ -148,6 +148,11 @@ Use `pima inventory availability --json` for the best CLI read on available,
 sellable, projected, and transfer-aware counts. Avoid reconstructing these
 numbers from raw units unless you need serial-level detail.
 
+For downstream catalog joins, `--json` includes exact Shopify product and
+variant IDs. Use `--live` to restrict to active on-site products, `--limit 250`
+for the largest page, and continue with `--page` while
+`pagination.next_page` is present.
+
 ## Fulfillable inventory
 
 Fulfillable availability powers customer-facing ship/pickup decisions.

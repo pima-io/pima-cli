@@ -12,6 +12,8 @@ export interface InventorySelectorParams {
   category_id?: string | number
   category_ids?: string
   gender?: 'm' | 'w' | 'u' | string
+  live?: boolean
+  on_site?: boolean
   location_id?: string | number
   location_ids?: string
   location?: string
@@ -25,6 +27,7 @@ export interface InventorySelectorParams {
   channel?: 'pos' | 'online' | 'all' | string
   all_pos?: boolean
   limit?: number
+  page?: number
 }
 
 export interface InventoryAvailabilityParams extends InventorySelectorParams {
@@ -75,6 +78,14 @@ export interface InventoryScope {
   matches: Array<Record<string, unknown>>
   warnings: string[]
   limited?: boolean
+  pagination?: InventoryPagination
+}
+
+export interface InventoryPagination {
+  page: number
+  per_page: number
+  previous_page?: number | null
+  next_page?: number | null
 }
 
 export interface InventoryPayload<Row> {
@@ -82,6 +93,7 @@ export interface InventoryPayload<Row> {
   filters: Record<string, unknown>
   location_scope: InventoryScope
   sku_scope: InventoryScope
+  pagination: InventoryPagination
   summary: Record<string, unknown>
   rows: Row[]
   generated_at: string

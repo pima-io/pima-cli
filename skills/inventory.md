@@ -42,7 +42,10 @@ each store/warehouse.
   SKUs by SKU/UPC/product/category/gender and resolves locations by id, name,
   short name, Pima `LocationGroup` (`--location-group`,
   `--location-group-id`, `--location-group-ids`), city, state, channel, or
-  `--all-pos`.
+  `--all-pos`. Use `--live` for active products currently on site. JSON rows
+  include `shopify_product_id` and `shopify_variant_id` for downstream joins.
+  Large selections return pagination metadata; continue with `--page` while
+  `pagination.next_page` is present (up to 250 SKUs per page).
 - `pima inventory transfers` is the first choice for "what is transferring",
   inbound/outbound transfer, and pending transfer questions. It groups rows by
   transfer and SKU and includes React UI drill-down links in `--json`.
@@ -82,7 +85,8 @@ Examples:
 pima inventory availability --sku BMSKUJY3 --short-name POS
 pima inventory availability --product "Field Spec" --city "Los Angeles" --channel pos
 pima inventory availability --category Shirts --state CA --all-pos --json
-pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
+pima inventory availability --live --all-pos --include-zero --limit 250 --page 1 --json
+pima inventory risk --live --q tshirts --city "Los Angeles" --channel pos --low-stock 5 --at-risk
 pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound --status transfering
 ```

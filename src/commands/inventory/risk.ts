@@ -8,6 +8,7 @@ export default class InventoryRisk extends BaseCommand {
     '<%= config.bin %> inventory risk --category Shirts --city "Los Angeles" --channel pos --at-risk',
     '<%= config.bin %> inventory risk --sku BMSKUJY3 --short-name POS --recent-days 14',
     '<%= config.bin %> inventory risk --q tshirts --all-pos --days-of-cover 7 --low-stock 2',
+    '<%= config.bin %> inventory risk --live --state CA --all-pos --low-stock 5 --at-risk --page 1',
   ]
 
   static flags = {
@@ -22,6 +23,8 @@ export default class InventoryRisk extends BaseCommand {
     'category-id': Flags.string({description: 'Category id'}),
     'category-ids': Flags.string({description: 'Comma-separated category ids'}),
     gender: Flags.string({options: ['m', 'w', 'u'], description: 'Product gender filter'}),
+    live: Flags.boolean({description: 'Restrict to active products currently on site'}),
+    'on-site': Flags.boolean({description: 'Restrict to products with on_site=true, including archived products'}),
     'location-id': Flags.string({description: 'Location id'}),
     'location-ids': Flags.string({description: 'Comma-separated location ids'}),
     location: Flags.string({description: 'Location name, reporting name, or short name'}),
@@ -41,6 +44,7 @@ export default class InventoryRisk extends BaseCommand {
     'low-stock': Flags.string({description: 'Low-stock unit threshold'}),
     'at-risk': Flags.boolean({description: 'Only include high/medium risk rows'}),
     limit: Flags.integer({description: 'Maximum SKUs to resolve, up to the server limit'}),
+    page: Flags.integer({description: 'One-based SKU result page'}),
     refresh: Flags.boolean({description: 'Force recalculation of stored daily SKU metrics'}),
   }
 
@@ -74,6 +78,8 @@ function paramsFromFlags(flags: Record<string, any>): InventoryRiskParams {
     category_id: flags['category-id'],
     category_ids: flags['category-ids'],
     gender: flags.gender,
+    live: flags.live,
+    on_site: flags['on-site'],
     location_id: flags['location-id'],
     location_ids: flags['location-ids'],
     location: flags.location,
@@ -93,6 +99,7 @@ function paramsFromFlags(flags: Record<string, any>): InventoryRiskParams {
     low_stock: flags['low-stock'],
     at_risk: flags['at-risk'],
     limit: flags.limit,
+    page: flags.page,
     refresh: flags.refresh,
   }
 }

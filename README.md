@@ -100,7 +100,8 @@ pima metrics products --today --group-by product_type --location-group-by city
 pima metrics team --today --group-by location_group --limit 3
 pima metrics team --today --q tshirts --sort units --group-by all
 pima inventory availability --sku BMSKUJY3 --short-name POS
-pima inventory risk --q tshirts --city "Los Angeles" --channel pos --at-risk
+pima inventory availability --live --all-pos --include-zero --limit 250 --page 1 --json
+pima inventory risk --live --q tshirts --city "Los Angeles" --channel pos --low-stock 5 --at-risk
 pima inventory fulfillment --sku BMSKUJY3 --city "Los Angeles" --channel pos
 pima inventory transfers --sku BMSKUJY3 --short-name POS --direction inbound
 pima alteration cancel 74902 --dry-run

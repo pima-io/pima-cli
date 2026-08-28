@@ -225,6 +225,16 @@ with sellable/projected availability and days of cover. Use
 fulfilled from; it includes route eligibility and route-action metadata in
 `--json`.
 
+For full live-catalog regional analysis, request active on-site products in
+pages and preserve the Shopify identifiers returned in each JSON row:
+
+```sh
+pima inventory availability --live --all-pos --include-zero --limit 250 --page 1 --json
+pima inventory risk --live --state CA --all-pos --low-stock 5 --at-risk --limit 250 --page 1 --json
+```
+
+Continue with `--page <pagination.next_page>` until `next_page` is `null`.
+
 For compound questions like "Who sold the most tshirts today, broken down by
 LocationGroup, and are those stores low on those tshirts?", first run
 `pima metrics team --today --q tshirts --sort units --group-by location_group`, then
