@@ -74,6 +74,24 @@ v1 skills: `getting-started`, `data-model`, `calendar`, `order-routing`, `scopes
 (backfill: `inventory`, `fulfillment`, `purchasing`, `recipes`,
 `question-catalog`, `metabase`, `versions`, `comments`, `feedback`).
 
+## Customer privacy removal
+
+Export the spreadsheet as UTF-8 CSV, then preview the exact customer scope:
+
+```sh
+pima customer erasure preview requests.csv --out preview.json
+pima customer erasure submit preview.json --yes
+pima customer erasure status preview.json --out results.csv
+pima customer erasure resume preview.json --yes
+```
+
+Preview resolves each email and saves customer IDs in a local plan. Review
+missing, ambiguous, invalid, and duplicate rows before submission. The CLI calls
+one customer at a time; add `--concurrency 3` for limited parallelism. Progress
+is saved locally so resume keeps successful requests. Shopify acceptance does
+not confirm erasure completion. The plan contains sensitive source emails.
+Read `pima skill customer-erasure` for permissions, column overrides, and scope.
+
 ## Discoverability
 
 The server self-describes its full resource surface at

@@ -1,6 +1,6 @@
 {
   "name": "@pima-io/cli",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Command-line bridge to PIMA — for humans and AI agents. OAuth device-flow auth, scoped access, and agent skills.",
   "bin": {
     "pima": "bin/run.js"
@@ -26,6 +26,7 @@
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "cli-table3": "^0.6",
+    "csv-parse": "^6.2.1",
     "open": "^10",
     "zod": "^3"
   },
@@ -73,7 +74,7 @@
         "description": "Products: show detail"
       },
       "customer": {
-        "description": "Customers: show detail"
+        "description": "Customers: details and CSV privacy removal"
       },
       "transfer": {
         "description": "Transfers: list, show"

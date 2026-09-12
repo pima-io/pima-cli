@@ -6,11 +6,17 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current published version: `0.15.0`
-- Latest release tag: `v0.15.0`
+- Current published version: `0.16.0`
+- Latest release tag: `v0.16.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.16.0` added:
+
+- `pima customer erasure preview`, `submit`, `status`, and `resume` for CSV
+  customer removal through individual PIMA actions, with local checkpoints and
+  optional limited concurrency.
 
 `v0.15.0` added:
 
