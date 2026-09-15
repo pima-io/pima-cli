@@ -99,6 +99,15 @@ The current CSV results cover PIMA/Shopify; inspect the raw removal-status
 endpoint separately for Stripe, and verify downstream completion before closing
 the whole request.
 
+When offered by PIMA, `delete_stripe_customer` explicitly deletes
+one captured Stripe customer with separate consequence approval. It removes
+saved cards and immediately cancels active subscriptions; it is irreversible.
+Use the `customer-erasure` skill for the confirmation parameters and read
+`stripe_redactions[].customer_deletion` for its result. **Customer deleted**
+does not mean transaction redaction or the whole privacy request is complete.
+PIMA owns the Stripe API choice and reconciliation. The CLI invokes PIMA
+actions and reports their outcomes; a failed check never approves deletion.
+
 ## Discoverability
 
 The server self-describes its full resource surface at

@@ -120,41 +120,65 @@ OneTrust approval, verification, or request closure.
 
 ## Direct Stripe through PIMA
 
-Refresh the live contract with `pima resource describe customers --refresh`
-before assuming the server supports Stripe redaction. On servers with this
-integration, local removal captures direct Stripe references before clearing
-PII and queues validation-only jobs. Validation never authorizes a run.
+PIMA owns its direct Stripe integration. The CLI and MCP invoke the available
+PIMA actions; they do not choose Stripe APIs, manage Stripe credentials, or
+implement provider retries. Refresh `pima resource describe customers --refresh`
+and inspect the action contract before acting. PIMA captures direct Stripe
+references before local removal and reports their progress separately.
 
-The current CSV commands/checkpoint/results report PIMA and Shopify outcomes;
-they do not preserve Stripe status. Read each customer's raw status separately:
+The CSV commands/checkpoint/results report PIMA and Shopify outcomes. Read
+each customer's raw status separately for Stripe:
 
 ```sh
 pima resource action customers 123 removal_status --method get --yes --json
 ```
 
 Inspect `stripe_status` and every entry in `stripe_redactions`. Missing fields
-or `unknown` mean coverage is unverified, including removals performed before
-Stripe reference capture existed. `not_required` means no supported references
-were captured, not proof that no unlinked or historical Stripe data exists.
+or `unknown` mean coverage is unverified. `not_required` means no supported
+references were captured, not proof that no historical or unlinked data exists.
+A queued or accepted action never proves completion.
 
-Use an entry's `stripe_redactions[].id` as `redaction_id` with PIMA's existing action:
+Use an entry's local `id` as `redaction_id` for the supported PIMA action:
 
 ```sh
 pima resource action customers 123 stripe_redaction --method post --data '{"redaction_id":456,"operation":"check"}' --yes --json
 ```
 
-`check` creates a validation-only job if absent or retrieves its status;
-`validate` retries eligibility after restrictions are resolved. Poll the read
-status endpoint to follow queued work. Use `operation: run` only for a ready
-job after explicit approval of the consequence: redacted payments cannot be
-refunded and their disputes cannot be challenged. Preserve prior approval for
-that exact job; do not treat generic removal approval as accepting additional
-payment consequences. Only `succeeded` confirms Stripe completion.
+Follow PIMA's reported readiness, restrictions, and next actions. Checking
+never approves a destructive operation. `operation: validate` rechecks
+eligibility; `operation: run` requires a ready result and explicit approval:
+redacted payments cannot be refunded and their disputes cannot be challenged.
+Preserve existing approval for that exact scope and consequence. Only
+`succeeded` confirms broader Stripe redaction for a root; check all roots.
 
-PIMA reports configuration, eligibility, and uncertain-request failures. Follow
-those instructions, including reconciliation after the create retry window;
-do not clear audit fields, force eligibility, or create duplicate jobs directly
-in Stripe to bypass them. An accepted/queued PIMA action is not completion.
+### Customer deletion is a separate outcome
+
+When PIMA offers **Delete Stripe customer** for a captured root, approval must
+cover irreversible deletion, removal of saved card details, and immediate
+cancellation of active subscriptions. This does not complete broader
+transaction-data redaction or the overall privacy request. Do not infer this
+approval from a failed check. Existing explicit approval of these consequences
+is sufficient.
+
+After checking the PIMA action contract and approving the captured customer:
+
+```sh
+pima resource action customers 123 delete_stripe_customer --method post --data '{"redaction_id":456,"confirmation":"delete_stripe_customer"}' --yes --json
+pima resource action customers 123 removal_status --method get --yes --json
+```
+
+MCP `pima_action` can invoke the same PIMA action/parameters in write mode.
+Read `stripe_redactions[].customer_deletion`: `pending` means requested,
+`uncertain` means unconfirmed, and `deleted` means PIMA verified deletion.
+PIMA also reports requester/time and completion time. Follow its reconciliation
+instructions before retrying an uncertain action; do not bypass it with direct
+provider calls or alter captured identity/audit fields.
+
+Report **Customer deleted; broader redaction pending** while broader redaction
+is unfinished. Keep `customer_deletion.status` separate from `stripe_status`
+and each root's redaction `status`. Unsupported roots remain unresolved by
+customer deletion. Continue separately authorized redaction and downstream
+verification; do not close the whole request because customer deletion succeeded.
 
 ## Track and verify the whole request
 

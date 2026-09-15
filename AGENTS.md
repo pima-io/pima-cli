@@ -6,11 +6,15 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current release version: `0.16.1`
-- Release tag: `v0.16.1`
+- Current release version: `0.16.2`
+- Release tag: `v0.16.2`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.16.2` clarifies the customer-erasure skill's PIMA actions and separates
+customer deletion from broader Stripe redaction completion. Stripe API choice
+and reconciliation remain inside PIMA; the CLI runtime is unchanged.
 
 `v0.16.1` updates the customer-erasure skill with service-agnostic agent
 orchestration, provider authorization, separate progress records, warehouse/BI
