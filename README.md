@@ -90,7 +90,14 @@ missing, ambiguous, invalid, and duplicate rows before submission. The CLI calls
 one customer at a time; add `--concurrency 3` for limited parallelism. Progress
 is saved locally so resume keeps successful requests. Shopify acceptance does
 not confirm erasure completion. The plan contains sensitive source emails.
-Read `pima skill customer-erasure` for permissions, column overrides, and scope.
+Read `pima skill customer-erasure` (MCP: `skill://customer-erasure`) for the
+full workflow: resolve identifiers before removal, use PIMA for its direct
+Shopify/Stripe integrations, and let the agent install/authenticate applicable
+external CLI/MCP tools using the company runbook. Other providers remain outside
+the CLI runtime. Track their outcomes in a separate agent-owned checkpoint.
+The current CSV results cover PIMA/Shopify; inspect the raw removal-status
+endpoint separately for Stripe, and verify downstream completion before closing
+the whole request.
 
 ## Discoverability
 

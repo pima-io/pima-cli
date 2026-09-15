@@ -3,7 +3,7 @@ name: getting-started
 description: Orientation — auth, scopes, output modes, exit codes, and the read→write safety model
 when_to_use: First time using the pima CLI, or wiring it into an agent
 scopes: []
-related: [scopes, data-model, calendar, question-catalog, metabase, feedback]
+related: [scopes, data-model, calendar, question-catalog, customer-erasure, metabase, feedback]
 ---
 
 # Getting started with the PIMA CLI
@@ -123,6 +123,10 @@ optimized command path for each one.
 
 Use `pima skill metabase` for ad-hoc data aggregation through the authorized
 Metabase CLI when the answer does not have a first-class PIMA command.
+
+Use `pima skill customer-erasure` for approved customer privacy requests: PIMA
+CSV removal, direct Shopify/Stripe status, and agent coordination of other
+services through their own CLI/MCP tools and a company-specific runbook.
 
 Use `pima skill feedback` to learn when to file bugs, ask questions, or request
 features from an agent session.
