@@ -2,6 +2,7 @@ export type ResourceFilterValue = string | number | boolean | Array<string | num
 export type ResourceFilters = Record<string, ResourceFilterValue>
 
 export interface ResourceQueryParams {
+  preset?: string
   q?: string
   page?: string | number
   per_page?: string | number

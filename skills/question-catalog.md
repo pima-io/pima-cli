@@ -2,7 +2,7 @@
 name: question-catalog
 description: Example business questions the CLI can answer and the optimized commands agents should prefer
 when_to_use: When an agent wants ideas for what to ask PIMA or needs to map a natural-language question to the right CLI/API path
-scopes: [reports:read, inventory:read, orders:read, transfers:read]
+scopes: [reports:read, inventory:read, orders:read, customers:read, transfers:read]
 related: [recipes, data-model, calendar, inventory, order-routing, fulfillment, metabase]
 ---
 
@@ -133,3 +133,10 @@ answer needs to be shareable with the team. See `pima skill metabase`.
 
 - "Who sold the most tshirts today, broken down by LocationGroup, and are those stores low on those tshirts?"
   First use `pima metrics team --today --q tshirts --sort units --group-by location_group`, then use `pima inventory risk --q tshirts --all-pos --at-risk` or narrow by the returned locations.
+
+## Customer Notifications
+
+- "Which customers are still waiting for these delayed products?"
+  Use `pima resource export orders --filter sku_prefixes=<prefixes> --filter fulfillment=awaiting --preset order_contacts --preview`, then repeat with `--output orders.csv` instead of `--preview`. Review the resolved products and size SKUs first.
+- "Give me unique customer emails for orders awaiting these products."
+  Use `pima resource export orders --filter product_ids=<ids> --filter fulfillment=awaiting --preset unique_emails --output emails.csv`. Requires `orders:read` and `customers:read`. See `pima skill recipes` for preview and matching semantics.

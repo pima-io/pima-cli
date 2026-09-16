@@ -11,6 +11,47 @@ related: [getting-started, question-catalog, metabase, order-routing, inventory,
 Copy-pasteable sequences. All read commands accept `--json` for piping to `jq`.
 For natural-language prompt ideas, read `pima skill question-catalog`.
 
+## Export contacts for customers awaiting selected products
+
+Requires `orders:read` and `customers:read`, plus the user's normal PIMA access.
+Use the current manifest to check that the server supports `export_presets`.
+
+```sh
+# Preview the resolved products/sizes and counts first.
+pima resource export orders --filter sku_prefixes=BM17305.1609RIN,BM12160.1609RIN --filter fulfillment=awaiting --preset order_contacts --preview
+
+# One row per order, with customer email and outstanding selected quantities.
+pima resource export orders --filter sku_prefixes=BM17305.1609RIN,BM12160.1609RIN --filter fulfillment=awaiting --preset order_contacts --output orders.csv
+
+# One row per unique, normalized email; blanks omitted.
+pima resource export orders --filter sku_prefixes=BM17305.1609RIN,BM12160.1609RIN --filter fulfillment=awaiting --preset unique_emails --output emails.csv
+```
+
+You can select `product_ids=13,14` (all sizes) or `sku_ids=101,102` (exact sizes)
+instead. Products, size SKUs, and literal case-insensitive prefixes match any
+selection; the selected item itself must be awaiting fulfillment. Partially
+fulfilled orders are included. Carts, terminal orders/items, and already shipped
+or handed-off items are excluded. An unknown selector is listed in preview and
+prevents export, rather than silently broadening the result.
+
+Both presets run against a consistent follower snapshot. Preview and generation
+happen separately, so counts can change; the completed export carries its own
+summary and snapshot timestamp. Orders missing email remain in the order CSV.
+Order contacts contain order number/link, placed time in UTC, email, matched
+products and size SKUs, and matching quantity. Fields starting with spreadsheet
+formula characters are escaped for safe opening.
+
+`--output` waits, downloads to a new private local file, and never overwrites.
+Generic exports are ZIP files; use a `.zip` filename for those. Contact presets
+are CSVs. Download URLs expire; the authenticated export status endpoint returns
+a fresh URL. Use `pima resource export-status <id> --output orders.csv` to
+resume a completed download after a timeout. Creating a list does not send
+customer notifications.
+
+Agents can use `pima_export_preview`, `pima_export`, and `pima_export_status` with the same structured
+filters. `pima_list` also accepts filters. Use `pima resource link orders` with
+those filters to bookmark the matching app view.
+
 ## Inspect then reroute an unshippable order item
 
 ```sh

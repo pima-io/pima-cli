@@ -207,6 +207,12 @@ export function renderResourceDetail(r: ManifestResource, gated?: boolean, host?
       : '  (none)',
   )
 
+  if (r.export_presets?.length) {
+    out.push('', 'EXPORT PRESETS:')
+    for (const preset of r.export_presets) out.push(`  ${preset.key}: ${preset.label} (${preset.required_scopes.join(', ')})`)
+    out.push('  Use resource export --preset <key> --preview, then --output <file.csv>.')
+  }
+
   // Filters
   out.push('')
   out.push('FILTERS:')

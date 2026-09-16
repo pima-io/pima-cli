@@ -173,6 +173,7 @@ export interface ManifestResource {
   scopes: ManifestScopes | null
   access?: ManifestAccess
   capabilities?: ManifestCapabilities
+  export_presets?: Array<{key: string; label: string; required_scopes: string[]; preview_path?: string}>
   supports?: {index?: boolean; show?: boolean; create?: boolean; update?: boolean; destroy?: boolean}
   paths?: {index?: string; show?: string; new?: string; edit?: string; create?: string; update?: string; destroy?: string}
   search?: {fields: string[]; placeholder: string | null} | null

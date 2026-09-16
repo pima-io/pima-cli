@@ -6,11 +6,20 @@ for PIMA, plus an MCP server and bundled markdown skills for agents.
 ## Current State
 
 - Main branch: `main`
-- Current release version: `0.16.2`
-- Release tag: `v0.16.2`
+- Current release version: `0.17.0`
+- Release tag: `v0.17.0`
 - Package: `@pima-io/cli`
 - npm org: `pima-io`
 - GitHub repo: `pima-io/pima-cli`
+
+`v0.17.0` added:
+
+- Order contact and unique-email exports with product, size-SKU, and prefix
+  selectors, item-level awaiting-fulfillment matching, and count previews.
+- `resource export --preset --preview --output` and `resource export-status`
+  for private CSV downloads and recovery without overwriting local files.
+- MCP export preview, generation, and status tools; structured list filters;
+  live manifest discovery and bundled usage recipes.
 
 `v0.16.2` clarifies the customer-erasure skill's PIMA actions and separates
 customer deletion from broader Stripe redaction completion. Stripe API choice

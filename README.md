@@ -108,6 +108,23 @@ does not mean transaction redaction or the whole privacy request is complete.
 PIMA owns the Stripe API choice and reconciliation. The CLI invokes PIMA
 actions and reports their outcomes; a failed check never approves deletion.
 
+## Order contact exports
+
+In Orders, select products, size SKUs, or SKU prefixes and choose **Awaiting
+fulfillment**. Preview the affected orders, units, and unique emails, then export
+one row per order or one row per email. Partial orders are included only when a
+selected item is still outstanding. The same filters and rules are available in
+the CLI (requires `orders:read` and `customers:read`):
+
+```sh
+pima resource export orders --filter sku_prefixes=BM17305.1609RIN,BM12160.1609RIN --filter fulfillment=awaiting --preset order_contacts --preview
+pima resource export orders --filter sku_prefixes=BM17305.1609RIN,BM12160.1609RIN --filter fulfillment=awaiting --preset unique_emails --output emails.csv
+```
+
+Downloads use new local files without overwriting. Contact CSVs use private,
+expiring links. See `pima skill recipes` for missing-email handling, exact size
+selection, snapshot timestamps, and the MCP export tools.
+
 ## Discoverability
 
 The server self-describes its full resource surface at

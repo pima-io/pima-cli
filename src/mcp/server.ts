@@ -11,7 +11,11 @@ import {
   resourceHistory,
   listResourceComments,
   createResourceComment,
+  previewResourceExport,
+  startResourceExport,
+  showResourceExport,
 } from '../lib/resource.js'
+import {waitForExport} from '../lib/resource-export.js'
 import {listSkills, loadSkill} from '../lib/skills.js'
 import {fetchManifest, findResource} from '../lib/manifest.js'
 import {resolveHost} from '../lib/config.js'
@@ -160,18 +164,52 @@ export function buildServer(opts: McpOptions = {}): McpServer {
         resource: z.string().describe('Resource name, e.g. orders, skus, customers'),
         q: z.string().optional().describe('Search query'),
         page: z.number().optional(),
+        filters: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))])).optional().describe('Structured filters from the live manifest, e.g. product_ids, sku_prefixes, fulfillment=awaiting.'),
         variant: z.string().optional().describe('View variant, e.g. shippable'),
       },
     },
-    async ({resource, q, page, variant}) => {
+    async ({resource, q, page, variant, filters}) => {
       try {
-        const {records} = await listResource(await client(), resource, {q, page, variant})
+        const {records} = await listResource(await client(), resource, {q, page, variant, filters})
         return ok(records)
       } catch (error) {
         return fail(error)
       }
     },
   )
+
+  const exportSchema = {
+    resource: z.string().describe('Resource ID, e.g. orders'),
+    preset: z.enum(['order_contacts', 'unique_emails']).optional().describe('Orders contact preset. Requires orders:read and customers:read.'),
+    filters: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))])).optional(),
+    q: z.string().optional(),
+    variant: z.string().optional(),
+    owner_resource: z.string().optional(),
+    owner_id: z.union([z.string(), z.number()]).optional(),
+  }
+  server.registerTool('pima_export_preview', {
+    description: 'Preview order contact export counts, missing emails, and resolved products/size SKUs. No export is created. Use fulfillment=awaiting to select outstanding items of the selected products, including partially fulfilled orders.',
+    inputSchema: {...exportSchema, preset: z.enum(['order_contacts', 'unique_emails'])},
+  }, async ({resource, ...params}) => {
+    try { return ok(await previewResourceExport(await client(), resource, params)) } catch (error) { return fail(error) }
+  })
+  server.registerTool('pima_export', {
+    description: 'Create a filtered CSV export and return its download URL. This generates a file; it does not email customers. Preview order contacts with pima_export_preview first. Uses the same filters as the app, rather than paging through raw orders.',
+    inputSchema: exportSchema,
+  }, async ({resource, ...params}) => {
+    try {
+      const api = await client()
+      const started = await startResourceExport(api, resource, params)
+      return ok(await waitForExport(() => showResourceExport(api, started.export.id), started.export, 2000, 45000))
+    } catch (error) { return fail(error) }
+  })
+
+  server.registerTool('pima_export_status', {
+    description: 'Check an existing export by ID and obtain its current download URL. Use after pima_export returns pending or processing, or to refresh an expired download link.',
+    inputSchema: {id: z.number().int().positive()},
+  }, async ({id}) => {
+    try { return ok(await showResourceExport(await client(), id)) } catch (error) { return fail(error) }
+  })
 
   server.registerTool(
     'pima_link',

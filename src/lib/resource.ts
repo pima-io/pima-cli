@@ -21,9 +21,12 @@ export interface ResourceExport {
   finished_generating_at?: string | null
   generation_duration?: number | null
   generation_duration_in_words?: string | null
+  summary?: Record<string, any>
+  source_snapshot?: Record<string, any>
 }
 
 export interface ResourceExportParams {
+  preset?: 'order_contacts' | 'unique_emails'
   q?: string
   sort?: string
   direction?: string
@@ -70,6 +73,11 @@ export async function startResourceExport(
 ): Promise<{export: ResourceExport}> {
   const qs = resourceParams(params).toString()
   return client.post(`/react_ui/resources/${resource}/export.json${qs ? `?${qs}` : ''}`)
+}
+
+export async function previewResourceExport(client: Client, resource: string, params: ResourceExportParams): Promise<{preview: Record<string, any>}> {
+  const qs = resourceSearchParams(params).toString()
+  return client.get(`/react_ui/resources/${resource}/export_preview.json?${qs}`)
 }
 
 // Poll export status after startResourceExport.

@@ -211,6 +211,14 @@ describe('manifest cache key (per token)', {concurrency: false}, () => {
 })
 
 describe('manifest rendering', () => {
+  it('makes contact export presets discoverable in resource describe', () => {
+    const resource = {...SAMPLE.resources[0], export_presets: [{key: 'order_contacts', label: 'Orders with customer emails', required_scopes: ['orders:read', 'customers:read']}]}
+    const out = renderResourceDetail(resource, true)
+    assert.match(out, /EXPORT PRESETS:/)
+    assert.match(out, /order_contacts: Orders with customer emails \(orders:read, customers:read\)/)
+    assert.match(out, /--preview, then --output/)
+  })
+
   it('renderResourceDetail shows scopes, access, search, filters, fields, and actions', () => {
     const out = renderResourceDetail(SAMPLE.resources[0], SAMPLE.gated)
     assert.match(out, /domain: orders/)
